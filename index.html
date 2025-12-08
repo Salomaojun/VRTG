@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VRTIGO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="imagens/favicone.png"/>
+</head>
+
+<body>
+  <!-- Header Hero Integrado -->
+  <header class="hero-header">
+    <nav class="navbar">
+      <div class="nav-brand">
+        <div class="logo">VRTIGO</div>
+        <div class="nav-controls">
+          <!-- Botão FAQ adicionado no header -->
+          <button class="nav-btn faq-btn" aria-label="FAQ">
+            <i class="fas fa-question"></i>
+          </button>
+          <button class="nav-btn user-btn" aria-label="User">
+            <i class="fas fa-user"></i>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Welcome Section Integrada -->
+    <div class="welcome-section">
+      <div class="welcome-content">
+        <h1 class="welcome-title">Welcome to VRTIGO</h1>
+        <p class="welcome-subtitle">Premium Clothing Experience</p>
+        <div class="welcome-actions">
+          <button class="cta-btn primary">Shop Now</button>
+          <button class="cta-btn secondary">Explore</button>
+        </div>
+      </div>
+      <div class="visual-element">
+        <div class="circle-animation"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <!-- Seção LOJA -->
+    <section id="loja" class="content-section">
+      <div class="section-header">
+        <h2>Loja</h2>
+        <div class="section-controls">
+          <button class="filter-btn active">All</button>
+          <button class="filter-btn">Popular</button>
+          <button class="filter-btn">New</button>
+        </div>
+      </div>
+
+      <div class="products-grid">
+        <!-- Os produtos serão carregados dinamicamente pelo JavaScript -->
+      </div>
+    </section>
+
+    <!-- Seção SOBRE -->
+    <section id="sobre" class="content-section">
+      <div class="section-header">
+        <h2>Sobre</h2>
+      </div>
+      <div class="about-content">
+        <div class="about-text">
+          <p>A ideia de fazer vendas começou em 2023 com Salomao Tsanwane Junior e Aminudin Muendane. Inicialmente, queríamos revender produtos já feitos, pois Amin já vendia com alguma frequência.</p>
+          <p>Um certo dia surgiu a ideia de criar nossa própria marca de camisetas, comprando camisetas de qualidade, colocando estampas bonitas e vendendo. O mercado de estampas estava crescendo, e queríamos crescer junto.</p>
+          <p>Em 2025, retomamos o projeto com objetivos claros e assim nasceu a VRTIGO.</p>
+        </div>
+        <div class="about-stats">
+          <div class="stat">
+            <span class="stat-number">2023</span>
+            <span class="stat-label">Início</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">3</span>
+            <span class="stat-label">Fundadores</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number">10+</span>
+            <span class="stat-label">Produtos</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção CONTATO -->
+    <section id="contato" class="content-section">
+      <div class="section-header">
+        <h2>Contato</h2>
+        <!-- Botão FAQ também na seção contato -->
+        <button class="cta-btn secondary faq-btn">
+          <i class="fas fa-question-circle"></i>
+          Ver FAQ
+        </button>
+      </div>
+      <div class="contact-content">
+        <!-- FORMULÁRIO CORRIGIDO - SEM ACTION E METHOD -->
+        <form id="contactForm" class="contact-form">
+          <div class="form-group">
+            <input type="text" name="nome" placeholder="Nome" required>
+          </div>
+          <div class="form-group">
+            <input type="email" name="email" placeholder="Email" required>
+          </div>
+          <div class="form-group">
+            <input type="text" name="assunto" placeholder="Assunto" required>
+          </div>
+          <div class="form-group">
+            <textarea name="mensagem" placeholder="Mensagem" required></textarea>
+          </div>
+          <button type="submit" class="submit-btn">Enviar Mensagem</button>
+        </form>
+        
+        <div class="contact-info">
+          <div class="contact-item">
+            <i class="fas fa-envelope"></i>
+            <span>Salomaojun005@gmail.com</span>
+          </div>
+          <div class="contact-item">
+            <i class="fas fa-phone"></i>
+            <span>+91 8897319841</span>
+          </div>
+          <!-- Localização removida -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Seção SAVES -->
+    <section id="saves" class="content-section">
+      <div class="section-header">
+        <h2>Favoritos</h2>
+        <span class="saves-count">0 itens</span>
+      </div>
+      <div class="saves-grid" id="saves-grid">
+        <!-- Produtos salvos aparecerão aqui dinamicamente -->
+      </div>
+      <div id="no-saves" class="no-saves">
+        <i class="far fa-heart"></i>
+        <h3>Nenhum favorito ainda</h3>
+        <p>Salve seus produtos favoritos clicando no coração</p>
+        <button class="cta-btn primary" onclick="scrollToSection('loja')">Explorar Loja</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Navigation Bottom -->
+  <nav class="bottom-nav">
+    <a href="#loja" class="nav-item active">
+      <i class="fas fa-store"></i>
+      <span>Loja</span>
+    </a>
+    <a href="#sobre" class="nav-item">
+      <i class="fas fa-info-circle"></i>
+      <span>Sobre</span>
+    </a>
+    <a href="#contato" class="nav-item">
+      <i class="fas fa-envelope"></i>
+      <span>Contato</span>
+    </a>
+    <a href="#saves" class="nav-item">
+      <i class="fas fa-heart"></i>
+      <span>Favoritos</span>
+    </a>
+  </nav>
+
+  <!-- Modal Produto -->
+  <div class="modal" id="productModal">
+    <div class="modal-content">
+      <button class="modal-close">&times;</button>
+      <div class="modal-body">
+        <!-- Conteúdo do modal será injetado via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal FAQ -->
+  <div class="modal" id="faqModal">
+    <div class="modal-content">
+      <button class="modal-close">&times;</button>
+      <div class="modal-body">
+        <h2>Perguntas Frequentes - VRTIGO</h2>
+        <div class="faq-content">
+          <div class="faq-placeholder">
+            <i class="fas fa-question-circle"></i>
+            <h3>FAQs em construção!</h3>
+            <p>Nossa equipe está preparando as perguntas mais frequentes para você.</p>
+            <p>Enquanto isso, entre em contato pelo formulário! 👇</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

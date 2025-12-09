@@ -529,7 +529,7 @@ function openProductModal(product) {
       <p class="modal-product-price">R$ ${product.price}</p>
       <div class="modal-actions">
         <button class="save-btn modal-save-btn ${isSaved ? 'active' : ''}" data-id="${product.id}">
-          <i class="${heartClass} fa-heart"></i> ${isSaved ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+          <i class="${heartClass} fa-heart"></i>
         </button>
         <a href="https://wa.me/${WHATSAPP_NUMBER}?text=Olá!%20Gostaria%20de%20comprar:%20${encodeURIComponent(product.name)}%20-%20R$%20${product.price}%20(${encodeURIComponent(product.desc)})" 
            class="whatsapp-btn modal-whatsapp-btn" 
@@ -559,7 +559,7 @@ function openProductModal(product) {
         icon.classList.remove("fa-solid");
         icon.classList.add("fa-regular");
         this.classList.remove("active");
-        this.innerHTML = '<i class="fa-regular fa-heart"></i> Adicionar aos favoritos';
+        this.innerHTML = '<i class="fa-regular fa-heart"></i>';
       } else {
         savedProducts.push({
           id: product.id,
@@ -573,7 +573,7 @@ function openProductModal(product) {
         icon.classList.remove("fa-regular");
         icon.classList.add("fa-solid");
         this.classList.add("active");
-        this.innerHTML = '<i class="fa-solid fa-heart"></i> Remover dos favoritos';
+        this.innerHTML = '<i class="fa-solid fa-heart"></i>';
       }
 
       localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));

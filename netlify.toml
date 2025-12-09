@@ -1,0 +1,14 @@
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = """
+      default-src 'self' https://*.netlify.app;
+      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdnjs.cloudflare.com/ajax/libs/ https://*.netlify.app;
+      style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/ajax/libs/ https://fonts.googleapis.com;
+      font-src 'self' https://cdnjs.cloudflare.com/ajax/libs/ https://fonts.gstatic.com;
+      img-src 'self' data: https://via.placeholder.com;
+      connect-src 'self' https://*.netlify.app https://formspree.io;
+      frame-ancestors 'none';
+      base-uri 'self';
+      form-action 'self' https://formspree.io https://wa.me;
+    """

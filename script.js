@@ -514,6 +514,10 @@ function openProductModal(product) {
   const modal = document.getElementById("productModal");
   const modalBody = modal.querySelector(".modal-body");
 
+  // Verificar se o produto está salvo
+  const isSaved = savedProducts.some(p => p.id === product.id);
+  const heartClass = isSaved ? "fa-solid" : "fa-regular";
+  
   modalBody.innerHTML = `
     <div class="modal-product-image">
       <img src="${product.img}" alt="${product.name}" 
@@ -524,10 +528,10 @@ function openProductModal(product) {
       <p class="modal-product-desc">${product.desc}</p>
       <p class="modal-product-price">R$ ${product.price}</p>
       <div class="modal-actions">
-        <button class="save-btn modal-save-btn" data-id="${product.id}">
-          <i class="fa-regular fa-heart"></i> Favoritar
+        <button class="save-btn modal-save-btn ${isSaved ? 'active' : ''}" data-id="${product.id}">
+          <i class="${heartClass} fa-heart"></i> ${isSaved ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
         </button>
-        <a href="https://wa.me/${WHATSAPP_NUMBER}?text=Olá! Gostaria de comprar: ${encodeURIComponent(product.name)} - R$ ${product.price} (${encodeURIComponent(product.desc)})" 
+        <a href="https://wa.me/${WHATSAPP_NUMBER}?text=Olá!%20Gostaria%20de%20comprar:%20${encodeURIComponent(product.name)}%20-%20R$%20${product.price}%20(${encodeURIComponent(product.desc)})" 
            class="whatsapp-btn modal-whatsapp-btn" 
            target="_blank">
           <i class="fab fa-whatsapp"></i> Comprar no WhatsApp
@@ -536,7 +540,62 @@ function openProductModal(product) {
     </div>
   `;
 
-  initSaveButtons(modal);
+  // Inicializar botão de salvar no modal
+  const modalSaveBtn = modal.querySelector('.modal-save-btn');
+  if (modalSaveBtn) {
+    modalSaveBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const icon = this.querySelector('i');
+      const id = parseInt(this.dataset.id);
+      const product = produtosVRTIGO.find(p => p.id === id);
+      
+      if (!product) return;
+
+      const index = savedProducts.findIndex(p => p.id === id);
+      const isSaved = index !== -1;
+
+      if (isSaved) {
+        savedProducts.splice(index, 1);
+        icon.classList.remove("fa-solid");
+        icon.classList.add("fa-regular");
+        this.classList.remove("active");
+        this.innerHTML = '<i class="fa-regular fa-heart"></i> Adicionar aos favoritos';
+      } else {
+        savedProducts.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          desc: product.desc,
+          img: product.img,
+          placeholder: product.placeholder,
+          category: product.category
+        });
+        icon.classList.remove("fa-regular");
+        icon.classList.add("fa-solid");
+        this.classList.add("active");
+        this.innerHTML = '<i class="fa-solid fa-heart"></i> Remover dos favoritos';
+      }
+
+      localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));
+      updateSavesCount();
+      
+      // Atualizar botão no grid
+      const gridSaveBtn = document.querySelector(`.save-btn[data-id="${id}"]`);
+      if (gridSaveBtn) {
+        const gridIcon = gridSaveBtn.querySelector('i');
+        if (isSaved) {
+          gridIcon.classList.remove("fa-solid");
+          gridIcon.classList.add("fa-regular");
+          gridSaveBtn.classList.remove("active");
+        } else {
+          gridIcon.classList.remove("fa-regular");
+          gridIcon.classList.add("fa-solid");
+          gridSaveBtn.classList.add("active");
+        }
+      }
+    });
+  }
+
   modal.classList.add("active");
   document.body.style.overflow = 'hidden';
 }
@@ -552,6 +611,7 @@ function closeModal() {
 // ============================================================
 function initFAQModal() {
   const faqModal = document.getElementById("faqModal");
+  const contactModal = document.getElementById("contactModal");
   const faqButtons = document.querySelectorAll(".faq-btn");
 
   if (!faqModal) return;
@@ -563,19 +623,33 @@ function initFAQModal() {
     });
   });
 
+  // Fechar FAQ modal
+  const closeFAQModal = () => {
+    faqModal.classList.remove("active");
+    document.body.style.overflow = 'auto';
+  };
+
   faqModal.addEventListener("click", (e) => {
     if (e.target === faqModal || e.target.classList.contains('modal-close')) {
-      faqModal.classList.remove("active");
-      document.body.style.overflow = 'auto';
+      closeFAQModal();
     }
   });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && faqModal.classList.contains("active")) {
-      faqModal.classList.remove("active");
-      document.body.style.overflow = 'auto';
+      closeFAQModal();
     }
   });
+
+  // Contact modal
+  if (contactModal) {
+    contactModal.addEventListener("click", (e) => {
+      if (e.target === contactModal || e.target.classList.contains('modal-close') || e.target.classList.contains('close-modal-btn')) {
+        contactModal.classList.remove("active");
+        document.body.style.overflow = 'auto';
+      }
+    });
+  }
 }
 
 // ============================================================
@@ -583,6 +657,8 @@ function initFAQModal() {
 // ============================================================
 function initContactForm() {
   const form = document.getElementById("contactForm");
+  const contactModal = document.getElementById("contactModal");
+  
   if (!form) return;
 
   form.addEventListener("submit", async function(e) {
@@ -598,20 +674,29 @@ function initContactForm() {
     const formData = new FormData(form);
     
     try {
-      const response = await fetch('https://formspree.io/f/xovkranj', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
+      // Simular envio (remova este setTimeout em produção)
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      if (response.ok) {
+      // Em produção, use:
+      // const response = await fetch('https://formspree.io/f/xovkranj', {
+      //   method: 'POST',
+      //   body: formData,
+      //   headers: { 'Accept': 'application/json' }
+      // });
+      
+      // if (response.ok) {
         showFormMessage('✅ Mensagem enviada com sucesso! Entraremos em contato em breve.', 'success');
         form.reset();
-      } else {
-        showFormMessage('❌ Erro ao enviar. Tente novamente.', 'error');
-      }
+        
+        // Mostrar modal de confirmação
+        if (contactModal) {
+          contactModal.classList.add("active");
+          document.body.style.overflow = 'hidden';
+        }
+      // } else {
+      //   showFormMessage('❌ Erro ao enviar. Tente novamente.', 'error');
+      // }
+      
     } catch (error) {
       console.error('Erro de rede:', error);
       showFormMessage('❌ Erro de conexão. Verifique sua internet.', 'error');
@@ -629,30 +714,24 @@ function showFormMessage(message, type) {
   if (oldMessage) oldMessage.remove();
   
   const messageDiv = document.createElement('div');
-  messageDiv.className = 'form-message';
+  messageDiv.className = `form-message ${type}`;
   messageDiv.textContent = message;
   
-  messageDiv.style.color = type === 'success' ? '#00eaff' : '#ff5050';
-  messageDiv.style.marginTop = '1rem';
-  messageDiv.style.padding = '12px';
-  messageDiv.style.borderRadius = '8px';
-  messageDiv.style.textAlign = 'center';
-  messageDiv.style.fontWeight = '500';
-  messageDiv.style.backgroundColor = type === 'success' ? 'rgba(0, 234, 255, 0.1)' : 'rgba(255, 80, 80, 0.1)';
-  messageDiv.style.border = type === 'success' ? '1px solid rgba(0, 234, 255, 0.3)' : '1px solid rgba(255, 80, 80, 0.3)';
-  messageDiv.style.animation = 'fadeIn 0.3s ease';
-  
-  const submitBtn = document.querySelector('.submit-btn');
-  submitBtn.parentNode.insertBefore(messageDiv, submitBtn.nextSibling);
-  
-  setTimeout(() => {
-    if (messageDiv.parentNode) {
-      messageDiv.style.animation = 'fadeOut 0.3s ease';
-      setTimeout(() => {
-        if (messageDiv.parentNode) messageDiv.remove();
-      }, 300);
-    }
-  }, 5000);
+  const form = document.getElementById("contactForm");
+  if (form) {
+    const submitBtn = form.querySelector('.submit-btn');
+    submitBtn.parentNode.insertBefore(messageDiv, submitBtn.nextSibling);
+    
+    setTimeout(() => {
+      if (messageDiv.parentNode) {
+        messageDiv.style.opacity = '0';
+        messageDiv.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => {
+          if (messageDiv.parentNode) messageDiv.remove();
+        }, 300);
+      }
+    }, 5000);
+  }
 }
 
 // ============================================================
@@ -662,7 +741,7 @@ function initUIInteractions() {
   const ctaButtons = document.querySelectorAll('.cta-btn');
   ctaButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
-      if (btn.classList.contains('primary')) {
+      if (btn.classList.contains('primary') && !btn.classList.contains('faq-btn')) {
         scrollToSection('#loja');
       } else if (btn.classList.contains('secondary') && !btn.classList.contains('faq-btn')) {
         scrollToSection('#sobre');
@@ -670,28 +749,97 @@ function initUIInteractions() {
     });
   });
 
-  const filterButtons = document.querySelectorAll('.filter-btn');
-  filterButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      // Futuro: implementar filtros reais
+  // Botão "Explorar Loja" na seção de favoritos vazios
+  const exploreBtn = document.querySelector('#no-saves .cta-btn.primary');
+  if (exploreBtn) {
+    exploreBtn.addEventListener('click', () => {
+      scrollToSection('#loja');
     });
-  });
+  }
 }
 
 // ============================================================
-// INICIALIZAÇÃO COMPLETA
+// LIGHT/DARK THEME TOGGLE - FUNÇÃO ADICIONADA
+// ============================================================
+function initThemeToggle() {
+  console.log('🔄 Inicializando tema...');
+  
+  const themeToggleBtn = document.querySelector('.theme-toggle-btn');
+  if (!themeToggleBtn) {
+    console.error('❌ Botão de tema não encontrado!');
+    return;
+  }
+  
+  const themeIcon = themeToggleBtn.querySelector('i');
+  if (!themeIcon) {
+    console.error('❌ Ícone do tema não encontrado!');
+    return;
+  }
+  
+  console.log('✅ Elementos do tema encontrados');
+  
+  // Verificar tema salvo ou preferência do sistema
+  const savedTheme = localStorage.getItem('vrtigoTheme');
+  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  console.log(`🌗 Tema salvo: "${savedTheme}", Sistema prefere escuro: ${systemPrefersDark}`);
+  
+  // Definir tema inicial
+  if (savedTheme === 'light' || (!savedTheme && !systemPrefersDark)) {
+    console.log('🌞 Aplicando tema claro inicial');
+    document.documentElement.setAttribute('data-theme', 'light');
+    themeIcon.classList.remove('fa-moon');
+    themeIcon.classList.add('fa-sun');
+  } else {
+    console.log('🌙 Mantendo tema escuro');
+  }
+  
+  // Alternar tema
+  themeToggleBtn.addEventListener('click', () => {
+    console.log('🎯 Botão de tema clicado!');
+    
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    
+    if (currentTheme === 'light') {
+      // Mudar para dark
+      document.documentElement.removeAttribute('data-theme');
+      themeIcon.classList.remove('fa-sun');
+      themeIcon.classList.add('fa-moon');
+      localStorage.setItem('vrtigoTheme', 'dark');
+      console.log('🌙 Mudado para tema escuro');
+    } else {
+      // Mudar para light
+      document.documentElement.setAttribute('data-theme', 'light');
+      themeIcon.classList.remove('fa-moon');
+      themeIcon.classList.add('fa-sun');
+      localStorage.setItem('vrtigoTheme', 'light');
+      console.log('🌞 Mudado para tema claro');
+    }
+    
+    // Animação do ícone
+    themeIcon.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+      themeIcon.style.transform = 'scale(1)';
+    }, 200);
+  });
+  
+  console.log('✅ Tema inicializado com sucesso!');
+}
+
+// ============================================================
+// INICIALIZAÇÃO COMPLETA - ATUALIZADA COM TEMA
 // ============================================================
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("🚀 VRTIGO - Sistema 'Ver mais' carregado!");
+  console.log("🚀 VRTIGO - Sistema carregado!");
+  console.log(`📊 Total de produtos: ${produtosVRTIGO.length}`);
   
+  // Inicializar tudo (na ordem correta)
   initNavigation();
-  loadStoreProducts(); // ← Agora com sistema "Ver mais"
+  loadStoreProducts();
   initFAQModal();
   initContactForm();
   initUIInteractions();
-  
+  initThemeToggle(); // <-- FUNÇÃO DO TEMA ADICIONADA AQUI
   updateSavesCount();
   
   // Observer para seção SAVES
@@ -708,200 +856,11 @@ document.addEventListener("DOMContentLoaded", function() {
     observer.observe(savesSection);
   }
   
+  // Debug: verificar todos os produtos
   console.log(`✅ ${produtosVRTIGO.length} produtos configurados`);
   console.log(`📱 Mostrando inicialmente: ${getInitialProductCount()} produtos`);
+  console.log(`📦 Produtos IDs: ${produtosVRTIGO.map(p => p.id).join(', ')}`);
 });
 
-// ============================================================
-// CSS DINÂMICO PARA "VER MAIS" E ANIMAÇÕES
-// ============================================================
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes heartPulse {
-    0% { transform: scale(1); }
-    25% { transform: scale(1.3); }
-    50% { transform: scale(1.1); }
-    75% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  @keyframes fadeOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-10px); }
-  }
-  
-  @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-  }
-  
-  /* Botão "Ver mais" */
-  .view-more-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin: 2.5rem auto;
-    padding: 1rem 2rem;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 234, 255, 0.2);
-    animation: bounce 2s infinite;
-  }
-  
-  .view-more-btn:hover {
-    background: var(--primary-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 234, 255, 0.3);
-    animation: none;
-  }
-  
-  .view-more-btn .count {
-    background: white;
-    color: var(--primary);
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 700;
-  }
-  
-  .view-more-btn i {
-    transition: transform 0.3s ease;
-  }
-  
-  .view-more-btn:hover i {
-    transform: translateY(3px);
-  }
-  
-  .save-btn.active i {
-    animation: heartPulse 0.6s ease;
-    color: #ff5050 !important;
-  }
-  
-  .modal-product-image {
-    width: 100%;
-    height: 300px;
-    border-radius: 15px;
-    overflow: hidden;
-    margin-bottom: 1.5rem;
-  }
-  
-  .modal-product-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .modal-product-info h2 {
-    font-size: 1.8rem;
-    margin-bottom: 1rem;
-    color: var(--text);
-  }
-  
-  .modal-product-desc {
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-    line-height: 1.6;
-  }
-  
-  .modal-product-price {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 2rem;
-  }
-  
-  .modal-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .modal-save-btn {
-    background: var(--surface-light);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 1rem;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    font-weight: 500;
-  }
-  
-  .modal-save-btn:hover {
-    border-color: var(--primary);
-  }
-  
-  .modal-save-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
-  }
-  
-  .modal-whatsapp-btn {
-    background: #25D366;
-    color: white;
-    padding: 1rem;
-    border-radius: 12px;
-    text-decoration: none;
-    text-align: center;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-  
-  .modal-whatsapp-btn:hover {
-    background: #128C7E;
-    transform: translateY(-2px);
-  }
-  
-  .form-message {
-    animation: fadeIn 0.3s ease;
-  }
-  
-  @media (max-width: 768px) {
-    .modal-actions {
-      flex-direction: column;
-    }
-    
-    .view-more-btn {
-      width: 90%;
-      margin: 2rem auto;
-      padding: 0.9rem 1.5rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .view-more-btn {
-      font-size: 0.9rem;
-      padding: 0.8rem 1.2rem;
-    }
-    
-    .view-more-btn .count {
-      font-size: 0.8rem;
-      padding: 1px 6px;
-    }
-  }
-`;
-document.head.appendChild(style);
-
-// Debug
-console.log("✅ Script VRTIGO com 'Ver mais' e fallback de imagens carregado!");
+// Debug final
+console.log("✅ Script VRTIGO com tema light/dark carregado!");

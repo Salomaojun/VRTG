@@ -359,6 +359,9 @@ body {
   50% { transform: translateY(-5px); }
 }
 
+/* ===========================
+   PRODUCT CARD STYLES
+   =========================== */
 .product-card {
   background: var(--surface);
   border-radius: 20px;
@@ -391,6 +394,9 @@ body {
   transform: scale(1.05);
 }
 
+/* ===========================
+   SAVE BUTTON - CORRIGIDO
+   =========================== */
 .save-btn {
   position: absolute;
   top: 1rem;
@@ -413,16 +419,37 @@ body {
 }
 
 .save-btn:hover {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.save-btn i {
+  transition: all 0.3s ease;
+  color: #cccccc; /* Cor do coração vazio */
+}
+
+.save-btn.active {
+  background: rgba(255, 0, 0, 0.15);
+  border: 1px solid rgba(255, 0, 0, 0.3);
 }
 
 .save-btn.active i {
-  color: var(--accent);
-  animation: heartPulse 0.6s ease;
+  color: #ff0000 !important; /* VERMELHO quando salvo */
+  filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.5));
+  animation: heartPulse 0.8s ease;
 }
 
 .save-btn:hover i {
-  color: var(--accent);
+  color: #ffffff;
+}
+
+.save-btn.active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+.save-btn.active:hover i {
+  color: #ff3333 !important;
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
 }
 
 .product-info {
@@ -772,7 +799,7 @@ body {
   transform: rotate(90deg);
 }
 
-/* Botão de salvar no modal */
+/* Botão de salvar no modal - CORRIGIDO */
 .modal-save-btn {
   position: absolute;
   top: 1rem;
@@ -796,28 +823,33 @@ body {
 }
 
 .modal-save-btn:hover {
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.modal-save-btn.active i {
-  color: var(--accent);
-  animation: heartPulse 0.6s ease;
-}
-
-.modal-save-btn.active {
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.modal-save-btn.active:hover {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .modal-save-btn i {
-  color: var(--text);
+  transition: all 0.3s ease;
+  color: #cccccc;
 }
 
-.modal-save-btn:hover i {
-  color: var(--accent);
+.modal-save-btn.active {
+  background: rgba(255, 0, 0, 0.15);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.modal-save-btn.active i {
+  color: #ff0000 !important;
+  filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.5));
+  animation: heartPulse 0.8s ease;
+}
+
+.modal-save-btn.active:hover {
+  background: rgba(255, 0, 0, 0.25);
+}
+
+.modal-save-btn.active:hover i {
+  color: #ff3333 !important;
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
 }
 
 .modal-body {
@@ -1298,6 +1330,7 @@ img {
   background-color: rgba(255, 80, 80, 0.1);
   border: 1px solid rgba(255, 80, 80, 0.3);
 }
+
 /* ===========================
    TEMA LIGHT/DARK - ADICIONE NO FINAL DO SEU CSS
    =========================== */
@@ -1326,30 +1359,4 @@ html[data-theme="light"] .hero-header {
 
 /* Botão de tema - animação do ícone */
 .theme-toggle-btn i {
-  transition: transform 0.5s ease, color 0.3s ease;
-}
-
-html[data-theme="light"] .theme-toggle-btn i {
-  transform: rotate(180deg);
-  color: var(--primary);
-}
-
-/* Transição suave para todo o site */
-html, body, * {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-/* Ajustes específicos para elementos que precisam */
-html[data-theme="light"] .product-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-html[data-theme="light"] .modal-content {
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-}
-
-html[data-theme="light"] .bottom-nav {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
-}
+  transition: transform 0.

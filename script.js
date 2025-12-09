@@ -351,37 +351,52 @@ function handleKeyboardNavigation(e) {
 }
 
 // ============================================================
-// SISTEMA DE SAVE (PRODUTOS FAVORITOS)
+// SISTEMA DE SAVE (PRODUTOS FAVORITOS) - CORRIGIDO
 // ============================================================
 function initSaveButtons(scope = document) {
-  if (!scope) return;
-
   const buttons = scope.querySelectorAll(".save-btn");
-
+  
   buttons.forEach(btn => {
     const id = parseInt(btn.dataset.id);
     if (isNaN(id)) return;
-
+    
     const icon = btn.querySelector("i");
     if (!icon) return;
-
-    btn.addEventListener("click", e => {
+    
+    // Verificar estado atual
+    const isCurrentlySaved = savedProducts.some(p => p.id === id);
+    
+    // Atualizar visual inicialmente
+    if (isCurrentlySaved) {
+      icon.classList.remove("fa-regular");
+      icon.classList.add("fa-solid");
+      btn.classList.add("active");
+    } else {
+      icon.classList.remove("fa-solid");
+      icon.classList.add("fa-regular");
+      btn.classList.remove("active");
+    }
+    
+    // Adicionar evento de clique
+    btn.addEventListener("click", function(e) {
+      e.preventDefault();
       e.stopPropagation();
       
-      const product = produtosVRTIGO.find(p => p.id === id) || 
-                     savedProducts.find(p => p.id === id);
-      
+      const product = produtosVRTIGO.find(p => p.id === id);
       if (!product) return;
-
+      
       const index = savedProducts.findIndex(p => p.id === id);
       const isSaved = index !== -1;
-
+      
       if (isSaved) {
+        // Remover dos favoritos
         savedProducts.splice(index, 1);
         icon.classList.remove("fa-solid");
         icon.classList.add("fa-regular");
         btn.classList.remove("active");
+        console.log(`❌ Produto ${id} removido dos favoritos`);
       } else {
+        // Adicionar aos favoritos
         savedProducts.push({
           id: product.id,
           name: product.name,
@@ -394,18 +409,21 @@ function initSaveButtons(scope = document) {
         icon.classList.remove("fa-regular");
         icon.classList.add("fa-solid");
         btn.classList.add("active");
+        console.log(`✅ Produto ${id} adicionado aos favoritos`);
       }
-
+      
+      // Salvar no localStorage
       try {
         localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));
+        console.log(`💾 Favoritos salvos: ${savedProducts.length} itens`);
         updateSavesCount();
         
-        // Atualizar se estiver na seção SAVES
-        if (document.getElementById('saves')?.checkVisibility()) {
+        // Se estiver na seção SAVES, recarregar
+        if (document.getElementById('saves')?.checkVisibility?.()) {
           loadSavedProducts();
         }
-      } catch (e) {
-        console.error("Erro ao salvar no localStorage:", e);
+      } catch (error) {
+        console.error("Erro ao salvar no localStorage:", error);
       }
     });
   });
@@ -559,7 +577,6 @@ function openProductModal(product) {
         icon.classList.remove("fa-solid");
         icon.classList.add("fa-regular");
         this.classList.remove("active");
-        this.innerHTML = '<i class="fa-regular fa-heart"></i>';
       } else {
         savedProducts.push({
           id: product.id,
@@ -573,7 +590,6 @@ function openProductModal(product) {
         icon.classList.remove("fa-regular");
         icon.classList.add("fa-solid");
         this.classList.add("active");
-        this.innerHTML = '<i class="fa-solid fa-heart"></i>';
       }
 
       localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));
@@ -832,6 +848,7 @@ function initThemeToggle() {
 document.addEventListener("DOMContentLoaded", function() {
   console.log("🚀 VRTIGO - Sistema carregado!");
   console.log(`📊 Total de produtos: ${produtosVRTIGO.length}`);
+  console.log(`💾 Produtos salvos: ${savedProducts.length}`);
   
   // Inicializar tudo (na ordem correta)
   initNavigation();
@@ -839,7 +856,7 @@ document.addEventListener("DOMContentLoaded", function() {
   initFAQModal();
   initContactForm();
   initUIInteractions();
-  initThemeToggle(); // <-- FUNÇÃO DO TEMA ADICIONADA AQUI
+  initThemeToggle();
   updateSavesCount();
   
   // Observer para seção SAVES
@@ -863,4 +880,4 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 // Debug final
-console.log("✅ Script VRTIGO com tema light/dark carregado!");
+console.log("✅ Script VRTIGO com sistema de favoritos corrigido!");

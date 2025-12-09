@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0, viewport-fit=cover">
   <title>VRTIGO</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
@@ -17,12 +17,12 @@
       <div class="nav-brand">
         <div class="logo">VRTIGO</div>
         <div class="nav-controls">
-          <!-- Botão FAQ adicionado no header -->
           <button class="nav-btn faq-btn" aria-label="FAQ">
             <i class="fas fa-question"></i>
           </button>
-          <button class="nav-btn user-btn" aria-label="User">
-            <i class="fas fa-user"></i>
+          <!-- BOTÃO TEMA (SUBSTITUI O USER) -->
+          <button class="nav-btn theme-toggle-btn" aria-label="Alternar tema">
+            <i class="fas fa-moon"></i>
           </button>
         </div>
       </div>
@@ -34,8 +34,8 @@
         <h1 class="welcome-title">Welcome to VRTIGO</h1>
         <p class="welcome-subtitle">Premium Clothing Experience</p>
         <div class="welcome-actions">
-          <button class="cta-btn primary">Shop Now</button>
-          <button class="cta-btn secondary">Explore</button>
+          <button class="cta-btn primary" onclick="scrollToSection('#loja')">Shop Now</button>
+          <button class="cta-btn secondary" onclick="scrollToSection('#sobre')">Explore</button>
         </div>
       </div>
       <div class="visual-element">
@@ -50,15 +50,17 @@
       <div class="section-header">
         <h2>Loja</h2>
         <div class="section-controls">
-          <button class="filter-btn active">All</button>
-          <button class="filter-btn">Popular</button>
-          <button class="filter-btn">New</button>
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="popular">Popular</button>
+          <button class="filter-btn" data-filter="new">New</button>
         </div>
       </div>
 
       <div class="products-grid">
-        <!-- Os produtos serão carregados dinamicamente pelo JavaScript -->
+        <!-- Produtos serão carregados pelo JavaScript -->
       </div>
+      
+      <!-- Botão "Ver mais" será inserido dinamicamente pelo JavaScript -->
     </section>
 
     <!-- Seção SOBRE -->
@@ -93,26 +95,24 @@
     <section id="contato" class="content-section">
       <div class="section-header">
         <h2>Contato</h2>
-        <!-- Botão FAQ também na seção contato -->
         <button class="cta-btn secondary faq-btn">
           <i class="fas fa-question-circle"></i>
           Ver FAQ
         </button>
       </div>
       <div class="contact-content">
-        <!-- FORMULÁRIO CORRIGIDO - SEM ACTION E METHOD -->
         <form id="contactForm" class="contact-form">
           <div class="form-group">
-            <input type="text" name="nome" placeholder="Nome" required>
+            <input type="text" name="nome" placeholder="Nome" required minlength="2">
           </div>
           <div class="form-group">
             <input type="email" name="email" placeholder="Email" required>
           </div>
           <div class="form-group">
-            <input type="text" name="assunto" placeholder="Assunto" required>
+            <input type="text" name="assunto" placeholder="Assunto" required minlength="3">
           </div>
           <div class="form-group">
-            <textarea name="mensagem" placeholder="Mensagem" required></textarea>
+            <textarea name="mensagem" placeholder="Mensagem" required minlength="10" rows="5"></textarea>
           </div>
           <button type="submit" class="submit-btn">Enviar Mensagem</button>
         </form>
@@ -126,7 +126,14 @@
             <i class="fas fa-phone"></i>
             <span>+91 8897319841</span>
           </div>
-          <!-- Localização removida -->
+          <div class="contact-item">
+            <i class="fab fa-whatsapp"></i>
+            <span><a href="https://wa.me/918897319841?text=👋%20Olá!%20Meu%20nome%20é%20_____%0A%0A📝%20Apresente%20a%20sua%20preocupação%20e%20lhe%20responderemos%20em%20breve!%20😊" 
+   target="_blank" 
+   style="color: var(--text); text-decoration: none;">
+   WhatsApp: +91 8897319841
+</a></span>
+          </div>
         </div>
       </div>
     </section>
@@ -138,32 +145,32 @@
         <span class="saves-count">0 itens</span>
       </div>
       <div class="saves-grid" id="saves-grid">
-        <!-- Produtos salvos aparecerão aqui dinamicamente -->
+        <!-- Produtos salvos aparecerão aqui -->
       </div>
       <div id="no-saves" class="no-saves">
         <i class="far fa-heart"></i>
         <h3>Nenhum favorito ainda</h3>
         <p>Salve seus produtos favoritos clicando no coração</p>
-        <button class="cta-btn primary" onclick="scrollToSection('loja')">Explorar Loja</button>
+        <button class="cta-btn primary" onclick="scrollToSection('#loja')">Explorar Loja</button>
       </div>
     </section>
   </main>
 
   <!-- Navigation Bottom -->
   <nav class="bottom-nav">
-    <a href="#loja" class="nav-item active">
+    <a href="#loja" class="nav-item active" data-nav="loja">
       <i class="fas fa-store"></i>
       <span>Loja</span>
     </a>
-    <a href="#sobre" class="nav-item">
+    <a href="#sobre" class="nav-item" data-nav="sobre">
       <i class="fas fa-info-circle"></i>
       <span>Sobre</span>
     </a>
-    <a href="#contato" class="nav-item">
+    <a href="#contato" class="nav-item" data-nav="contato">
       <i class="fas fa-envelope"></i>
       <span>Contato</span>
     </a>
-    <a href="#saves" class="nav-item">
+    <a href="#saves" class="nav-item" data-nav="saves">
       <i class="fas fa-heart"></i>
       <span>Favoritos</span>
     </a>
@@ -172,26 +179,45 @@
   <!-- Modal Produto -->
   <div class="modal" id="productModal">
     <div class="modal-content">
+      <button class="modal-save-btn">
+        <i class="far fa-heart"></i>
+      </button>
       <button class="modal-close">&times;</button>
-      <div class="modal-body">
-        <!-- Conteúdo do modal será injetado via JS -->
+      <div class="modal-body" id="productModalBody">
+        <!-- Conteúdo será injetado via JS -->
       </div>
     </div>
   </div>
 
-  <!-- Modal FAQ -->
-  <div class="modal" id="faqModal">
+ <!-- Modal FAQ -->
+<div class="modal" id="faqModal">
+  <div class="modal-content">
+    <button class="modal-close">&times;</button>
+    <div class="modal-body">
+      <div class="faq-content">
+        <div class="faq-placeholder">
+          <i class="fas fa-question-circle"></i>
+          <h3>FAQs em construção!</h3>
+          <p>Nossa equipe está preparando as perguntas mais frequentes para você.</p>
+          <p>Enquanto isso, entre em contato pelo formulário na secçao contactos ! 👇</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Modal de Confirmação de Contato -->
+  <div class="modal" id="contactModal">
     <div class="modal-content">
       <button class="modal-close">&times;</button>
       <div class="modal-body">
-        <h2>Perguntas Frequentes - VRTIGO</h2>
-        <div class="faq-content">
-          <div class="faq-placeholder">
-            <i class="fas fa-question-circle"></i>
-            <h3>FAQs em construção!</h3>
-            <p>Nossa equipe está preparando as perguntas mais frequentes para você.</p>
-            <p>Enquanto isso, entre em contato pelo formulário! 👇</p>
-          </div>
+        <div style="text-align: center; padding: 2rem;">
+          <i class="fas fa-check-circle" style="font-size: 4rem; color: #C68AFF; margin-bottom: 1rem;"></i>
+          <h3 style="margin-bottom: 1rem; color: var(--text);">Mensagem Enviada!</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">Sua mensagem foi enviada com sucesso.</p>
+          <p style="color: var(--text-secondary); margin-bottom: 2rem;">Entraremos em contato em breve.</p>
+          <button class="cta-btn primary close-modal-btn" style="margin-top: 1rem;">OK</button>
         </div>
       </div>
     </div>

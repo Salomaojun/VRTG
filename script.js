@@ -460,75 +460,96 @@ function loadSavedProducts() {
 // ============================================================
 // MODAL DE PRODUTO (ATUALIZADO COM FALLBACK)
 // ============================================================
+// ============================================================
+// MODAL DE PRODUTO (COM BOTÃO SAVE FUNCIONAL)
+// ============================================================
+
 function openProductModal(product) {
   const modal = document.getElementById("productModal");
   const modalBody = modal.querySelector(".modal-body");
 
-  // Verificar se o produto está salvo
+  // estado atual
   const isSaved = savedProducts.some(p => p.id === product.id);
   const heartClass = isSaved ? "fa-solid" : "fa-regular";
+  const btnClass = isSaved ? "active" : "";
 
   modalBody.innerHTML = `
-    <div class="modal-product-image">
-      <img src="${product.img}" alt="${product.name}"
-           onerror="this.onerror=null; this.src='${product.placeholder}'">
-    </div>
+    <div class="modal-content">
+      <div class="modal-product-image">
+        <img src="${product.img}" 
+             alt="${product.name}" 
+             onerror="this.onerror=null; this.src='${product.placeholder}'">
+      </div>
 
-    <div class="modal-product-info">
-      <h2>${product.name}</h2>
-      <p class="modal-product-desc">${product.desc}</p>
-      <p class="modal-product-price">R$ ${product.price}</p>
+      <div class="modal-info">
+        <h2>${product.name}</h2>
+        <p class="modal-desc">${product.desc}</p>
 
-      <div class="modal-actions">
-        <button class="save-btn modal-save-btn ${isSaved ? 'active' : ''}" data-id="${product.id}">
-          <i class="${heartClass} fa-heart"></i>
-        </button>
+        <div class="modal-price-row">
+          <span class="modal-price">R$ ${product.price}</span>
 
-        <a href="https://wa.me/${WHATSAPP_NUMBER}?text=Olá! Gostaria de comprar: ${encodeURIComponent(product.name)} - R$ ${product.price} (${encodeURIComponent(product.desc)})"
-           class="whatsapp-btn modal-whatsapp-btn"
-           target="_blank">
-          <i class="fab fa-whatsapp"></i> Comprar no WhatsApp
-        </a>
+          <button class="modal-save-btn ${btnClass}" data-id="${product.id}">
+            <i class="${heartClass} fa-heart"></i>
+          </button>
+        </div>
+
+        <button class="modal-buy-btn">Comprar</button>
       </div>
     </div>
   `;
 
-  // *** IMPORTANTE: reativar as funções do botão save do modal ***
-  initModalSaveButton(modal);
+  modal.classList.add("open");
 
-  modal.classList.add("active");
-  document.body.style.overflow = 'hidden';
+  // inicializa o botão save do modal
+  initModalSaveButton(product.id);
 }
 
+function initModalSaveButton(productId) {
+  const btn = document.querySelector(".modal-save-btn");
+  if (!btn) return;
 
-function initModalSaveButton(modal) {
-  const saveBtn = modal.querySelector(".modal-save-btn");
-  if (!saveBtn) return;
+  const icon = btn.querySelector("i");
 
-  saveBtn.onclick = () => {
-    const id = parseInt(saveBtn.dataset.id);
-    const product = produtosVRTIGO.find(p => p.id === id);
-    if (!product) return;
+  btn.addEventListener("click", () => {
+    const index = savedProducts.findIndex(p => p.id === productId);
+    const isSaved = index !== -1;
+    const product = produtosVRTIGO.find(p => p.id === productId);
 
-    const exists = savedProducts.some(p => p.id === id);
-
-    if (exists) {
-      // remover
-      savedProducts = savedProducts.filter(p => p.id !== id);
-      saveBtn.classList.remove("active");
-      saveBtn.querySelector("i").classList.remove("fa-solid");
-      saveBtn.querySelector("i").classList.add("fa-regular");
+    if (isSaved) {
+      savedProducts.splice(index, 1);
+      icon.classList.remove("fa-solid");
+      icon.classList.add("fa-regular");
+      btn.classList.remove("active");
     } else {
-      // salvar
       savedProducts.push(product);
-      saveBtn.classList.add("active");
-      saveBtn.querySelector("i").classList.remove("fa-regular");
-      saveBtn.querySelector("i").classList.add("fa-solid");
+      icon.classList.remove("fa-regular");
+      icon.classList.add("fa-solid");
+      btn.classList.add("active");
     }
 
-    localStorage.setItem("savedProducts", JSON.stringify(savedProducts));
-    updateSavedProductsUI();
-  };
+    localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));
+
+    updateSavesCount();
+    loadSavedProducts();  // atualiza página de favoritos
+    loadStoreProducts();  // atualiza os cards da loja também
+  });
+}
+
+function initProductModal() {
+  const modal = document.getElementById("productModal");
+  const closeBtn = document.getElementById("modalClose");
+
+  if (!modal || !closeBtn) return;
+
+  closeBtn.addEventListener("click", () => {
+    modal.classList.remove("open");
+  });
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      modal.classList.remove("open");
+    }
+  });
 }
 
 
@@ -821,5 +842,6 @@ document.querySelectorAll("#contactModal .modal-close, #contactModal .close-moda
 
 // Debug final
 console.log("✅ Script VRTIGO com sistema de favoritos corrigido!");
+
 
 

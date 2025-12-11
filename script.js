@@ -217,7 +217,7 @@ function generateProductCard(product) {
       <div class="product-image">
         <img src="${imgSrc}" alt="${product.name}" 
              onerror="this.onerror=null; this.src='${placeholderSrc}'">
-        <button class="save-btn ${btnClass}" data-id="${product.id}">
+        <button class="save-btn ${btnClass}" data-id="${product.id}" type="button">
           <i class="${heartClass} fa-heart"></i>
         </button>
       </div>
@@ -226,7 +226,7 @@ function generateProductCard(product) {
         <p class="product-desc">${product.shortDesc}</p>
         <div class="product-footer">
           <span class="price">R$ ${product.price}</span>
-          <button class="buy-btn">Comprar</button>
+          <button class="buy-btn" type="button">Comprar</button>
         </div>
       </div>
     </div>
@@ -249,7 +249,7 @@ function loadProductsToGrid(productsArray, gridElement) {
   
   // Re-inicializar eventos
   initSaveButtons(gridElement);
-  initProductModal();
+  initBuyButtons(gridElement);
 }
 
 // ============================================================
@@ -458,17 +458,13 @@ function loadSavedProducts() {
 }
 
 // ============================================================
-// MODAL DE PRODUTO (ATUALIZADO COM FALLBACK)
-// ============================================================
-// ============================================================
 // MODAL DE PRODUTO (COM BOTÃO SAVE FUNCIONAL)
 // ============================================================
-
 function openProductModal(product) {
   const modal = document.getElementById("productModal");
   const modalBody = modal.querySelector(".modal-body");
 
-  // estado atual
+  // Verificar estado atual
   const isSaved = savedProducts.some(p => p.id === product.id);
   const heartClass = isSaved ? "fa-solid" : "fa-regular";
   const btnClass = isSaved ? "active" : "";
@@ -488,51 +484,87 @@ function openProductModal(product) {
         <div class="modal-price-row">
           <span class="modal-price">R$ ${product.price}</span>
 
-          <button class="modal-save-btn ${btnClass}" data-id="${product.id}">
+          <button class="modal-save-btn ${btnClass}" 
+                  data-id="${product.id}" 
+                  type="button">
             <i class="${heartClass} fa-heart"></i>
           </button>
         </div>
 
-        <button class="modal-buy-btn">Comprar</button>
+        <button class="modal-buy-btn" type="button">Comprar</button>
       </div>
     </div>
   `;
 
   modal.classList.add("open");
 
-  // inicializa o botão save do modal
-  initModalSaveButton(product.id);
-}
+  // Adicionar evento ao botão de save DO MODAL
+  const modalSaveBtn = modal.querySelector('.modal-save-btn');
+  if (modalSaveBtn) {
+    modalSaveBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const productId = parseInt(this.dataset.id);
+      const product = produtosVRTIGO.find(p => p.id === productId);
+      
+      if (!product) return;
+      
+      const index = savedProducts.findIndex(p => p.id === productId);
+      const isCurrentlySaved = index !== -1;
+      const icon = this.querySelector('i');
+      
+      if (isCurrentlySaved) {
+        // Remover dos favoritos
+        savedProducts.splice(index, 1);
+        icon.classList.remove("fa-solid");
+        icon.classList.add("fa-regular");
+        this.classList.remove("active");
+        console.log(`❌ Produto ${productId} removido dos favoritos (modal)`);
+      } else {
+        // Adicionar aos favoritos
+        savedProducts.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          desc: product.desc,
+          img: product.img,
+          placeholder: product.placeholder,
+          category: product.category
+        });
+        icon.classList.remove("fa-regular");
+        icon.classList.add("fa-solid");
+        this.classList.add("active");
+        console.log(`✅ Produto ${productId} adicionado aos favoritos (modal)`);
+      }
+      
+      // Salvar no localStorage
+      try {
+        localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));
+        console.log(`💾 Favoritos salvos: ${savedProducts.length} itens`);
+        updateSavesCount();
+        
+        // Atualizar botões de save em todos os lugares
+        initSaveButtons();
+        
+        // Se estiver na seção SAVES, recarregar
+        if (document.getElementById('saves')?.checkVisibility?.()) {
+          loadSavedProducts();
+        }
+      } catch (error) {
+        console.error("Erro ao salvar no localStorage:", error);
+      }
+    });
+  }
 
-function initModalSaveButton(productId) {
-  const btn = document.querySelector(".modal-save-btn");
-  if (!btn) return;
-
-  const icon = btn.querySelector("i");
-
-  btn.addEventListener("click", () => {
-    const index = savedProducts.findIndex(p => p.id === productId);
-    const isSaved = index !== -1;
-    const product = produtosVRTIGO.find(p => p.id === productId);
-
-    if (isSaved) {
-      savedProducts.splice(index, 1);
-      icon.classList.remove("fa-solid");
-      icon.classList.add("fa-regular");
-      btn.classList.remove("active");
-    } else {
-      savedProducts.push(product);
-      icon.classList.remove("fa-regular");
-      icon.classList.add("fa-solid");
-      btn.classList.add("active");
-    }
-
-    localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));
-
-    updateSavesCount();
-    loadSavedProducts();  // atualiza página de favoritos
-    loadStoreProducts();  // atualiza os cards da loja também
-  });
+  // Adicionar evento ao botão "Comprar" do modal
+  const modalBuyBtn = modal.querySelector('.modal-buy-btn');
+  if (modalBuyBtn) {
+    modalBuyBtn.addEventListener('click', function() {
+      const whatsappText = `Olá! Gostaria de comprar: ${product.name} (R$ ${product.price})`;
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappText)}`, '_blank');
+    });
+  }
 }
 
 function initProductModal() {
@@ -541,6 +573,21 @@ function initProductModal() {
 
   if (!modal || !closeBtn) return;
 
+  // Adicione este evento para abrir modal ao clicar em produtos
+  document.addEventListener("click", function(e) {
+    const productCard = e.target.closest(".product-card");
+    if (productCard) {
+      const productId = parseInt(productCard.dataset.id);
+      const product = produtosVRTIGO.find(p => p.id === productId);
+      
+      if (product) {
+        e.preventDefault();
+        openProductModal(product);
+      }
+    }
+  });
+
+  // Fechar modal
   closeBtn.addEventListener("click", () => {
     modal.classList.remove("open");
   });
@@ -552,6 +599,30 @@ function initProductModal() {
   });
 }
 
+// ============================================================
+// BOTÕES DE COMPRA
+// ============================================================
+function initBuyButtons(scope = document) {
+  const buyButtons = scope.querySelectorAll(".buy-btn");
+  
+  buyButtons.forEach(btn => {
+    btn.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const productCard = this.closest(".product-card");
+      if (!productCard) return;
+      
+      const productId = parseInt(productCard.dataset.id);
+      const product = produtosVRTIGO.find(p => p.id === productId);
+      
+      if (product) {
+        const whatsappText = `Olá! Gostaria de comprar: ${product.name} (R$ ${product.price})`;
+        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappText)}`, '_blank');
+      }
+    });
+  });
+}
 
 // ============================================================
 // MODAL FAQ
@@ -565,14 +636,14 @@ function initFAQModal() {
 
   faqButtons.forEach(btn => {
     btn.addEventListener("click", () => {
-      faqModal.classList.add("active");
+      faqModal.classList.add("open");
       document.body.style.overflow = 'hidden';
     });
   });
 
   // Fechar FAQ modal
   const closeFAQModal = () => {
-    faqModal.classList.remove("active");
+    faqModal.classList.remove("open");
     document.body.style.overflow = 'auto';
   };
 
@@ -583,7 +654,7 @@ function initFAQModal() {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && faqModal.classList.contains("active")) {
+    if (e.key === "Escape" && faqModal.classList.contains("open")) {
       closeFAQModal();
     }
   });
@@ -592,7 +663,7 @@ function initFAQModal() {
   if (contactModal) {
     contactModal.addEventListener("click", (e) => {
       if (e.target === contactModal || e.target.classList.contains('modal-close') || e.target.classList.contains('close-modal-btn')) {
-        contactModal.classList.remove("active");
+        contactModal.classList.remove("open");
         document.body.style.overflow = 'auto';
       }
     });
@@ -621,28 +692,22 @@ function initContactForm() {
     const formData = new FormData(form);
     
     try {
-      // Simular envio (remova este setTimeout em produção)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const response = await fetch('https://formspree.io/f/xovkranj', {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+      });
       
-      // Em produção, use:
-      // const response = await fetch('https://formspree.io/f/xovkranj', {
-      //   method: 'POST',
-      //   body: formData,
-      //   headers: { 'Accept': 'application/json' }
-      // });
-      
-      // if (response.ok) {
-        showFormMessage('✅ Mensagem enviada com sucesso! Entraremos em contato em breve.', 'success');
-        form.reset();
-        
+      if (response.ok) {
         // Mostrar modal de confirmação
         if (contactModal) {
-          contactModal.classList.add("active");
+          contactModal.classList.add("open");
           document.body.style.overflow = 'hidden';
         }
-      // } else {
-      //   showFormMessage('❌ Erro ao enviar. Tente novamente.', 'error');
-      // }
+        form.reset();
+      } else {
+        showFormMessage('❌ Erro ao enviar. Tente novamente.', 'error');
+      }
       
     } catch (error) {
       console.error('Erro de rede:', error);
@@ -706,7 +771,7 @@ function initUIInteractions() {
 }
 
 // ============================================================
-// LIGHT/DARK THEME TOGGLE - FUNÇÃO ADICIONADA
+// LIGHT/DARK THEME TOGGLE
 // ============================================================
 function initThemeToggle() {
   console.log('🔄 Inicializando tema...');
@@ -774,7 +839,7 @@ function initThemeToggle() {
 }
 
 // ============================================================
-// INICIALIZAÇÃO COMPLETA - ATUALIZADA COM TEMA
+// INICIALIZAÇÃO COMPLETA
 // ============================================================
 document.addEventListener("DOMContentLoaded", function() {
   console.log("🚀 VRTIGO - Sistema carregado!");
@@ -784,6 +849,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // Inicializar tudo (na ordem correta)
   initNavigation();
   loadStoreProducts();
+  initProductModal();
   initFAQModal();
   initContactForm();
   initUIInteractions();
@@ -807,41 +873,39 @@ document.addEventListener("DOMContentLoaded", function() {
   // Debug: verificar todos os produtos
   console.log(`✅ ${produtosVRTIGO.length} produtos configurados`);
   console.log(`📱 Mostrando inicialmente: ${getInitialProductCount()} produtos`);
-  console.log(`📦 Produtos IDs: ${produtosVRTIGO.map(p => p.id).join(', ')}`);
 });
-const contactForm = document.getElementById("contactForm");
-const contactModal = document.getElementById("contactModal");
 
-if (contactForm) {
-  contactForm.addEventListener("submit", async function (e) {
-    e.preventDefault();
-
-    const data = new FormData(contactForm);
-
-    const response = await fetch("https://formspree.io/f/xovkranj", {
-      method: "POST",
-      body: data,
-      headers: { "Accept": "application/json" }
-    });
-
-    if (response.ok) {
-      contactModal.classList.add("open");
-      contactForm.reset();
-    } else {
-      alert("Erro ao enviar. Tente novamente.");
-    }
-  });
+// ============================================================
+// CSS IMPORTANTE PARA ADICIONAR AO SEU ARQUIVO CSS
+// ============================================================
+/*
+.save-btn.active,
+.modal-save-btn.active {
+  color: #ff0000 !important;
 }
 
-// Botões de fechar o modal
-document.querySelectorAll("#contactModal .modal-close, #contactModal .close-modal-btn")
-  .forEach(btn => btn.addEventListener("click", () => {
-    contactModal.classList.remove("open");
-  }));
+.save-btn.active i,
+.modal-save-btn.active i {
+  color: #ff0000 !important;
+}
 
+.save-btn,
+.modal-save-btn {
+  transition: all 0.3s ease;
+}
 
-// Debug final
-console.log("✅ Script VRTIGO com sistema de favoritos corrigido!");
+.save-btn:hover,
+.modal-save-btn:hover {
+  transform: scale(1.1);
+}
 
+.modal {
+  display: none;
+}
 
+.modal.open {
+  display: flex;
+}
+*/
 
+console.log("✅ Script VRTIGO com sistema de favoritos corrigido e funcional!");

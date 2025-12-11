@@ -878,6 +878,37 @@ document.addEventListener("DOMContentLoaded", function() {
   console.log(`📱 Mostrando inicialmente: ${getInitialProductCount()} produtos`);
   console.log(`📦 Produtos IDs: ${produtosVRTIGO.map(p => p.id).join(', ')}`);
 });
+const contactForm = document.getElementById("contactForm");
+const contactModal = document.getElementById("contactModal");
+
+if (contactForm) {
+  contactForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const data = new FormData(contactForm);
+
+    const response = await fetch("https://formspree.io/f/xovkranj", {
+      method: "POST",
+      body: data,
+      headers: { "Accept": "application/json" }
+    });
+
+    if (response.ok) {
+      contactModal.classList.add("open");
+      contactForm.reset();
+    } else {
+      alert("Erro ao enviar. Tente novamente.");
+    }
+  });
+}
+
+// Botões de fechar o modal
+document.querySelectorAll("#contactModal .modal-close, #contactModal .close-modal-btn")
+  .forEach(btn => btn.addEventListener("click", () => {
+    contactModal.classList.remove("open");
+  }));
+
 
 // Debug final
 console.log("✅ Script VRTIGO com sistema de favoritos corrigido!");
+

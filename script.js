@@ -460,74 +460,6 @@ function loadSavedProducts() {
 // ============================================================
 // MODAL DE PRODUTO (ATUALIZADO COM FALLBACK)
 // ============================================================
-function initProductModal() {
-  const modal = document.getElementById("productModal");
-  const productCards = document.querySelectorAll(".product-card");
-  const buyButtons = document.querySelectorAll(".buy-btn");
-
-  if (!modal) return;
-
-  productCards.forEach(card => {
-    card.addEventListener("click", (e) => {
-      if (e.target.closest(".save-btn")) return;
-      
-      const id = parseInt(card.dataset.id);
-      if (isNaN(id)) return;
-
-      const name = card.dataset.name || "Nome indisponível";
-      const desc = card.dataset.desc || "Descrição indisponível";
-      const price = card.dataset.price || "0.00";
-      const img = card.dataset.img || "";
-      const product = produtosVRTIGO.find(p => p.id === id);
-
-      openProductModal({ 
-        id, 
-        name, 
-        desc, 
-        price, 
-        img,
-        placeholder: product?.placeholder || getPlaceholderImage(name, product?.category || 'basica')
-      });
-    });
-  });
-
-  buyButtons.forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const card = btn.closest(".product-card");
-      const id = parseInt(card.dataset.id);
-      if (isNaN(id)) return;
-
-      const name = card.dataset.name || "Nome indisponível";
-      const desc = card.dataset.desc || "Descrição indisponível";
-      const price = card.dataset.price || "0.00";
-      const img = card.dataset.img || "";
-      const product = produtosVRTIGO.find(p => p.id === id);
-
-      openProductModal({ 
-        id, 
-        name, 
-        desc, 
-        price, 
-        img,
-        placeholder: product?.placeholder || getPlaceholderImage(name, product?.category || 'basica')
-      });
-    });
-  });
-
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal || e.target.classList.contains('modal-close')) {
-      closeModal();
-    }
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && modal.classList.contains("active")) {
-      closeModal();
-    }
-  });
-}
-
 function openProductModal(product) {
   const modal = document.getElementById("productModal");
   const modalBody = modal.querySelector(".modal-body");
@@ -535,22 +467,25 @@ function openProductModal(product) {
   // Verificar se o produto está salvo
   const isSaved = savedProducts.some(p => p.id === product.id);
   const heartClass = isSaved ? "fa-solid" : "fa-regular";
-  
+
   modalBody.innerHTML = `
     <div class="modal-product-image">
-      <img src="${product.img}" alt="${product.name}" 
+      <img src="${product.img}" alt="${product.name}"
            onerror="this.onerror=null; this.src='${product.placeholder}'">
     </div>
+
     <div class="modal-product-info">
       <h2>${product.name}</h2>
       <p class="modal-product-desc">${product.desc}</p>
       <p class="modal-product-price">R$ ${product.price}</p>
+
       <div class="modal-actions">
         <button class="save-btn modal-save-btn ${isSaved ? 'active' : ''}" data-id="${product.id}">
           <i class="${heartClass} fa-heart"></i>
         </button>
-        <a href="https://wa.me/${WHATSAPP_NUMBER}?text=Olá!%20Gostaria%20de%20comprar:%20${encodeURIComponent(product.name)}%20-%20R$%20${product.price}%20(${encodeURIComponent(product.desc)})" 
-           class="whatsapp-btn modal-whatsapp-btn" 
+
+        <a href="https://wa.me/${WHATSAPP_NUMBER}?text=Olá! Gostaria de comprar: ${encodeURIComponent(product.name)} - R$ ${product.price} (${encodeURIComponent(product.desc)})"
+           class="whatsapp-btn modal-whatsapp-btn"
            target="_blank">
           <i class="fab fa-whatsapp"></i> Comprar no WhatsApp
         </a>
@@ -558,69 +493,44 @@ function openProductModal(product) {
     </div>
   `;
 
-  // Inicializar botão de salvar no modal
-  const modalSaveBtn = modal.querySelector('.modal-save-btn');
-  if (modalSaveBtn) {
-    modalSaveBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const icon = this.querySelector('i');
-      const id = parseInt(this.dataset.id);
-      const product = produtosVRTIGO.find(p => p.id === id);
-      
-      if (!product) return;
-
-      const index = savedProducts.findIndex(p => p.id === id);
-      const isSaved = index !== -1;
-
-      if (isSaved) {
-        savedProducts.splice(index, 1);
-        icon.classList.remove("fa-solid");
-        icon.classList.add("fa-regular");
-        this.classList.remove("active");
-      } else {
-        savedProducts.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          desc: product.desc,
-          img: product.img,
-          placeholder: product.placeholder,
-          category: product.category
-        });
-        icon.classList.remove("fa-regular");
-        icon.classList.add("fa-solid");
-        this.classList.add("active");
-      }
-
-      localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));
-      updateSavesCount();
-      
-      // Atualizar botão no grid
-      const gridSaveBtn = document.querySelector(`.save-btn[data-id="${id}"]`);
-      if (gridSaveBtn) {
-        const gridIcon = gridSaveBtn.querySelector('i');
-        if (isSaved) {
-          gridIcon.classList.remove("fa-solid");
-          gridIcon.classList.add("fa-regular");
-          gridSaveBtn.classList.remove("active");
-        } else {
-          gridIcon.classList.remove("fa-regular");
-          gridIcon.classList.add("fa-solid");
-          gridSaveBtn.classList.add("active");
-        }
-      }
-    });
-  }
+  // *** IMPORTANTE: reativar as funções do botão save do modal ***
+  initModalSaveButton(modal);
 
   modal.classList.add("active");
   document.body.style.overflow = 'hidden';
 }
 
-function closeModal() {
-  const modal = document.getElementById("productModal");
-  modal.classList.remove("active");
-  document.body.style.overflow = 'auto';
+
+function initModalSaveButton(modal) {
+  const saveBtn = modal.querySelector(".modal-save-btn");
+  if (!saveBtn) return;
+
+  saveBtn.onclick = () => {
+    const id = parseInt(saveBtn.dataset.id);
+    const product = produtosVRTIGO.find(p => p.id === id);
+    if (!product) return;
+
+    const exists = savedProducts.some(p => p.id === id);
+
+    if (exists) {
+      // remover
+      savedProducts = savedProducts.filter(p => p.id !== id);
+      saveBtn.classList.remove("active");
+      saveBtn.querySelector("i").classList.remove("fa-solid");
+      saveBtn.querySelector("i").classList.add("fa-regular");
+    } else {
+      // salvar
+      savedProducts.push(product);
+      saveBtn.classList.add("active");
+      saveBtn.querySelector("i").classList.remove("fa-regular");
+      saveBtn.querySelector("i").classList.add("fa-solid");
+    }
+
+    localStorage.setItem("savedProducts", JSON.stringify(savedProducts));
+    updateSavedProductsUI();
+  };
 }
+
 
 // ============================================================
 // MODAL FAQ
@@ -911,4 +821,5 @@ document.querySelectorAll("#contactModal .modal-close, #contactModal .close-moda
 
 // Debug final
 console.log("✅ Script VRTIGO com sistema de favoritos corrigido!");
+
 

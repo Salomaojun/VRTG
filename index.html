@@ -91,53 +91,55 @@
       </div>
     </section>
 
-    <!-- Seção CONTATO -->
-    <section id="contato" class="content-section">
-      <div class="section-header">
-        <h2>Contato</h2>
-        <button class="cta-btn secondary faq-btn">
-          <i class="fas fa-question-circle"></i>
-          Ver FAQ
-        </button>
+   <!-- Seção CONTATO -->
+<section id="contato" class="content-section">
+  <div class="section-header">
+    <h2>Contato</h2>
+    <button class="cta-btn secondary faq-btn">
+      <i class="fas fa-question-circle"></i>
+      Ver FAQ
+    </button>
+  </div>
+  <div class="contact-content">
+    <!-- FORMULÁRIO CORRIGIDO - SEM action/method (serão gerenciados pelo JavaScript) -->
+    <form id="contactForm" class="contact-form">
+      <div class="form-group">
+        <input type="text" name="nome" placeholder="Nome" required minlength="2">
       </div>
-      <div class="contact-content">
-        <form id="contactForm" class="contact-form" 
-      action="https://formspree.io/f/xovkranj" 
-      method="POST">
-          <div class="form-group">
-            <input type="text" name="nome" placeholder="Nome" required minlength="2">
-          </div>
-          <div class="form-group">
-            <input type="email" name="email" placeholder="Email" required>
-          </div>
-          <div class="form-group">
-            <input type="text" name="assunto" placeholder="Assunto" required minlength="3">
-          </div>
-          <div class="form-group">
-            <textarea name="mensagem" placeholder="Mensagem" required minlength="10" rows="5"></textarea>
-          </div>
-          <button type="submit" class="submit-btn">Enviar Mensagem</button>
-        </form>
-        
-        <div class="contact-info">
-          <div class="contact-item">
-            <i class="fas fa-envelope"></i>
-            <span>Salomaojun005@gmail.com</span>
-          </div>
-          <div class="contact-item">
-            <i class="fas fa-phone"></i>
-            <span>+91 8897319841</span>
-          </div>
-          <div class="contact-item">
-            <i class="fab fa-whatsapp"></i>
-            <span><a href="https://wa.me/918897319841?text=👋%20Olá!%20Meu%20nome%20é%20_____%0A%0A📝%20Apresente%20a%20sua%20preocupação%20e%20lhe%20responderemos%20em%20breve!%20😊" 
-   target="_blank" 
-   style="color: var(--text); text-decoration: none;">
-   WhatsApp: +91 8897319841
-</a></span>
-          </div>
-        </div>
+      <div class="form-group">
+        <input type="email" name="email" placeholder="Email" required>
       </div>
+      <div class="form-group">
+        <input type="text" name="assunto" placeholder="Assunto" required minlength="3">
+      </div>
+      <div class="form-group">
+        <textarea name="mensagem" placeholder="Mensagem" required minlength="10" rows="5"></textarea>
+      </div>
+      <button type="submit" class="submit-btn">Enviar Mensagem</button>
+    </form>
+    
+    <div class="contact-info">
+      <div class="contact-item">
+        <i class="fas fa-envelope"></i>
+        <span>Salomaojun005@gmail.com</span>
+      </div>
+      <div class="contact-item">
+        <i class="fas fa-phone"></i>
+        <span>+91 8897319841</span>
+      </div>
+      <div class="contact-item">
+        <i class="fab fa-whatsapp"></i>
+        <span>
+          <a href="https://wa.me/918897319841?text=👋%20Olá!%20Meu%20nome%20é%20_____%0A%0A📝%20Apresente%20a%20sua%20preocupação%20e%20lhe%20responderemos%20em%20breve!%20😊" 
+             target="_blank" 
+             style="color: var(--text); text-decoration: none;">
+            WhatsApp: +91 8897319841
+          </a>
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
     </section>
 
     <!-- Seção SAVES -->
@@ -228,4 +230,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-

@@ -425,7 +425,8 @@ body {
 
 .save-btn i {
   transition: all 0.3s ease;
-  color: #cccccc; /* Cor do coração vazio */
+  color: #cccccc;
+  font-size: 1.2rem;
 }
 
 .save-btn.active {
@@ -434,13 +435,9 @@ body {
 }
 
 .save-btn.active i {
-  color: #ff0000 !important; /* VERMELHO quando salvo */
+  color: #ff0000 !important;
   filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.5));
   animation: heartPulse 0.8s ease;
-}
-
-.save-btn:hover i {
-  color: #ffffff;
 }
 
 .save-btn.active:hover {
@@ -575,7 +572,7 @@ body {
   color: var(--text);
   font-size: 1rem;
   transition: all 0.3s ease;
-  font-size: 16px !important; /* Previne zoom no iOS */
+  font-size: 16px !important;
 }
 
 .form-group input:focus,
@@ -739,7 +736,7 @@ body {
 }
 
 /* ===========================
-   MODAL
+   MODAL - CORRIGIDO PARA EVITAR DUPLICAÇÃO
    =========================== */
 .modal {
   display: none;
@@ -748,27 +745,33 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   z-index: 2000;
-  backdrop-filter: blur(10px);
-}
-
-.modal.active {
-  display: flex;
+  backdrop-filter: blur(15px);
   align-items: center;
   justify-content: center;
+}
+
+.modal.open {
+  display: flex;
 }
 
 .modal-content {
   background: var(--surface);
   border-radius: 20px;
-  max-width: 500px;
   width: 90%;
+  max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
   border: 1px solid var(--border);
-  margin: 1rem;
+  box-shadow: var(--shadow);
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* Botão de fechar - TOPO DIREITO */
@@ -783,11 +786,11 @@ body {
   border-radius: 50%;
   color: var(--text);
   cursor: pointer;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 10;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   min-height: 44px;
@@ -799,7 +802,7 @@ body {
   transform: rotate(90deg);
 }
 
-/* Botão de salvar no modal - CORRIGIDO */
+/* Botão de salvar no modal - CORRIGIDO ESPECIFICAMENTE */
 .modal-save-btn {
   position: absolute;
   top: 1rem;
@@ -815,7 +818,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 10;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   min-height: 44px;
@@ -830,11 +833,13 @@ body {
 .modal-save-btn i {
   transition: all 0.3s ease;
   color: #cccccc;
+  font-size: 1.2rem;
 }
 
+/* CORREÇÃO CRÍTICA: Forçar cor vermelha quando ativo */
 .modal-save-btn.active {
-  background: rgba(255, 0, 0, 0.15);
-  border: 1px solid rgba(255, 0, 0, 0.3);
+  background: rgba(255, 0, 0, 0.15) !important;
+  border: 1px solid rgba(255, 0, 0, 0.3) !important;
 }
 
 .modal-save-btn.active i {
@@ -844,7 +849,7 @@ body {
 }
 
 .modal-save-btn.active:hover {
-  background: rgba(255, 0, 0, 0.25);
+  background: rgba(255, 0, 0, 0.25) !important;
 }
 
 .modal-save-btn.active:hover i {
@@ -854,6 +859,7 @@ body {
 
 .modal-body {
   padding: 2rem;
+  padding-top: 3.5rem; /* Espaço para os botões no topo */
 }
 
 /* Estilos específicos para modal de produto */
@@ -869,25 +875,58 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
-.modal-product-info h2 {
+.modal-product-image:hover img {
+  transform: scale(1.05);
+}
+
+.modal-info h2 {
   font-size: 1.8rem;
   margin-bottom: 1rem;
   color: var(--text);
 }
 
-.modal-product-desc {
+.modal-desc {
   color: var(--text-secondary);
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   line-height: 1.6;
 }
 
-.modal-product-price {
+.modal-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-price {
   font-size: 2rem;
   font-weight: 700;
   color: var(--primary);
-  margin-bottom: 2rem;
+}
+
+.modal-buy-btn {
+  background: var(--gradient);
+  color: var(--background);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  width: 100%;
+  min-height: 44px;
+}
+
+.modal-buy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(198, 138, 255, 0.4);
 }
 
 .modal-actions {
@@ -1039,14 +1078,15 @@ body {
   }
 
   .modal-content {
-    margin: 0 auto;
     width: 95%;
     max-width: 95%;
     border-radius: 16px;
+    margin: 0.5rem;
   }
 
   .modal-body {
     padding: 1.5rem;
+    padding-top: 3.5rem;
   }
 
   .modal-close {
@@ -1054,6 +1094,7 @@ body {
     right: 0.8rem;
     width: 36px;
     height: 36px;
+    font-size: 1rem;
   }
 
   .modal-save-btn {
@@ -1061,12 +1102,19 @@ body {
     left: 0.8rem;
     width: 36px;
     height: 36px;
+    font-size: 1rem;
   }
 
-  .modal-body img,
-  .modal-body .product-image {
-    max-width: 100%;
-    height: auto;
+  .modal-product-image {
+    height: 200px;
+  }
+
+  .modal-info h2 {
+    font-size: 1.5rem;
+  }
+
+  .modal-price {
+    font-size: 1.7rem;
   }
   
   .faq-placeholder {
@@ -1138,6 +1186,15 @@ body {
     font-size: 0.8rem;
     padding: 1px 6px;
   }
+  
+  .modal-body {
+    padding: 1.2rem;
+    padding-top: 3.5rem;
+  }
+  
+  .modal-product-image {
+    height: 180px;
+  }
 }
 
 /* ===========================
@@ -1187,7 +1244,7 @@ body {
   
   .modal-body {
     padding: 1rem;
-    padding-top: 3rem; /* Espaço para os botões */
+    padding-top: 3.5rem;
   }
   
   .modal-close,
@@ -1201,6 +1258,11 @@ body {
   
   .modal-save-btn {
     left: 0.5rem;
+  }
+  
+  .modal-save-btn i,
+  .modal-close i {
+    font-size: 1rem;
   }
 }
 
@@ -1291,23 +1353,6 @@ img {
 }
 
 /* ===========================
-   GALERIA DE IMAGENS NO MODAL
-   =========================== */
-.modal-gallery {
-  display: flex;
-  overflow-x: auto;
-  gap: 10px;
-  padding-bottom: 10px;
-  scroll-snap-type: x mandatory;
-}
-
-.modal-gallery img {
-  scroll-snap-align: center;
-  max-width: 100%;
-  flex: 0 0 auto;
-}
-
-/* ===========================
    MENSAGENS DE FORMULÁRIO
    =========================== */
 .form-message {
@@ -1332,7 +1377,7 @@ img {
 }
 
 /* ===========================
-   TEMA LIGHT/DARK - ADICIONE NO FINAL DO SEU CSS
+   TEMA LIGHT/DARK
    =========================== */
 
 /* Tema claro - sobrepõe todas as cores */
@@ -1357,6 +1402,142 @@ html[data-theme="light"] .hero-header {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
 }
 
-/* Botão de tema - animação do ícone */
-.theme-toggle-btn i {
-  transition: transform 0.
+/* Ajustes para botões no tema claro */
+html[data-theme="light"] .save-btn,
+html[data-theme="light"] .modal-save-btn {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="light"] .save-btn i,
+html[data-theme="light"] .modal-save-btn i {
+  color: #666666;
+}
+
+html[data-theme="light"] .save-btn.active,
+html[data-theme="light"] .modal-save-btn.active {
+  background: rgba(255, 0, 0, 0.1) !important;
+  border: 1px solid rgba(255, 0, 0, 0.2) !important;
+}
+
+/* Correção extra para garantir que os ícones fiquem vermelhos */
+.save-btn.active i.fa-heart,
+.modal-save-btn.active i.fa-heart {
+  color: #ff0000 !important;
+}
+
+/* Estilo específico para quando o coração está vermelho */
+.fa-heart.active-heart {
+  color: #ff0000 !important;
+}
+
+/* Para garantir que sobreponha qualquer outro estilo */
+.save-btn.active i,
+.modal-save-btn.active i,
+.save-btn.active i.fa-heart,
+.modal-save-btn.active i.fa-heart {
+  color: #ff0000 !important;
+}
+
+/* ===========================
+   UTILITÁRIOS
+   =========================== */
+.text-center {
+  text-align: center;
+}
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+.hidden {
+  display: none !important;
+}
+
+/* ===========================
+   LOADING STATES
+   =========================== */
+.loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid var(--primary);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===========================
+   ERROR STATES
+   =========================== */
+.error-message {
+  color: var(--accent);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ===========================
+   ACCESSIBILITY
+   =========================== */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Foco visível para acessibilidade */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ===========================
+   PRINT STYLES
+   =========================== */
+@media print {
+  .bottom-nav,
+  .nav-controls,
+  .view-more-btn,
+  .save-btn,
+  .modal-save-btn,
+  .modal-close {
+    display: none !important;
+  }
+  
+  .product-card {
+    break-inside: avoid;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}

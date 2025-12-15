@@ -209,17 +209,67 @@ function toggleSaveProduct(productId) {
   return null;
 }
 
-function updateSaveButton(button, productId) {
-  const isSaved = savedProducts.some(p => p.id === productId);
-  const icon = button.querySelector("i");
+// ============================================================
+// FUNÇÃO ATUALIZADA DE SINCRONIZAÇÃO DOS CORAÇÕES
+// ============================================================
+function updateAllSaveButtons() {
+  // Atualizar todos os botões de favorito na LOJA
+  const storeButtons = document.querySelectorAll('.products-grid .save-btn');
+  storeButtons.forEach(btn => {
+    const productId = parseInt(btn.dataset.id);
+    if (!isNaN(productId)) {
+      const isSaved = savedProducts.some(p => p.id === productId);
+      const icon = btn.querySelector("i");
+      
+      if (icon) {
+        if (isSaved) {
+          icon.className = "fas fa-heart";
+          btn.classList.add("active");
+        } else {
+          icon.className = "far fa-heart";
+          btn.classList.remove("active");
+        }
+      }
+    }
+  });
   
-  if (icon) {
-    if (isSaved) {
-      icon.className = "fas fa-heart";
-      button.classList.add("active");
-    } else {
-      icon.className = "far fa-heart";
-      button.classList.remove("active");
+  // Atualizar todos os botões de favorito na SEÇÃO SAVES
+  const savesButtons = document.querySelectorAll('#saves-grid .save-btn');
+  savesButtons.forEach(btn => {
+    const productId = parseInt(btn.dataset.id);
+    if (!isNaN(productId)) {
+      const isSaved = savedProducts.some(p => p.id === productId);
+      const icon = btn.querySelector("i");
+      
+      if (icon) {
+        if (isSaved) {
+          icon.className = "fas fa-heart";
+          btn.classList.add("active");
+        } else {
+          icon.className = "far fa-heart";
+          btn.classList.remove("active");
+        }
+      }
+    }
+  });
+  
+  // Atualizar botão do modal se estiver aberto
+  const modalSaveBtn = document.querySelector('.modal-save-btn');
+  if (modalSaveBtn) {
+    const productId = parseInt(modalSaveBtn.dataset.id);
+    if (!isNaN(productId)) {
+      const isSaved = savedProducts.some(p => p.id === productId);
+      const icon = modalSaveBtn.querySelector('i');
+      
+      if (icon) {
+        if (isSaved) {
+          icon.className = "fas fa-heart";
+          modalSaveBtn.classList.add("active");
+        } else {
+          icon.className = "far fa-heart";
+          modalSaveBtn.classList.remove("active");
+        }
+      }
     }
   }
 }
@@ -439,8 +489,58 @@ function updateActiveNav() {
 }
 
 // ============================================================
-// SISTEMA DE SAVE (PRODUTOS FAVORITOS)
+// SISTEMA ATUALIZADO DE SAVE (SINCRONIZADO)
 // ============================================================
+function handleSaveButtonClick(e, productId) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  const wasSaved = toggleSaveProduct(productId);
+  
+  if (wasSaved !== null) {
+    // Salvar no localStorage
+    saveToLocalStorage();
+    
+    // Atualizar contador
+    updateSavesCount();
+    
+    // SINCRONIZAR TODOS OS BOTÕES
+    updateAllSaveButtons();
+    
+    // REMOVER O CARD DA SEÇÃO SAVES IMEDIATAMENTE
+    if (!wasSaved && document.getElementById('saves-grid')) {
+      // Se foi removido dos favoritos, remover o card da seção SAVES
+      const savesGrid = document.getElementById('saves-grid');
+      const cardToRemove = savesGrid.querySelector(`.product-card[data-id="${productId}"]`);
+      if (cardToRemove) {
+        // Animação de fade out antes de remover
+        cardToRemove.style.opacity = '0';
+        cardToRemove.style.transform = 'translateY(-10px)';
+        cardToRemove.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        
+        setTimeout(() => {
+          cardToRemove.remove();
+          
+          // Verificar se ainda tem produtos salvos
+          const remainingCards = savesGrid.querySelectorAll('.product-card');
+          if (remainingCards.length === 0) {
+            loadSavedProducts(); // Isso mostrará a mensagem "nenhum produto salvo"
+          }
+        }, 300);
+      }
+    }
+    
+    // Se foi ADICIONADO aos favoritos e a seção SAVES está visível
+    if (wasSaved) {
+      const savesSection = safeGetElement('saves');
+      if (savesSection && isElementInViewport(savesSection)) {
+        // Recarregar a seção SAVES para mostrar o novo produto
+        loadSavedProducts();
+      }
+    }
+  }
+}
+
 function initSaveButtons(scope = document) {
   const buttons = scope.querySelectorAll(".save-btn");
   
@@ -448,32 +548,14 @@ function initSaveButtons(scope = document) {
     const id = parseInt(btn.dataset.id);
     if (isNaN(id)) return;
     
-    updateSaveButton(btn, id);
-    
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
     
-    newBtn.addEventListener("click", function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const productId = parseInt(this.dataset.id);
-      const wasSaved = toggleSaveProduct(productId);
-      
-      if (wasSaved !== null) {
-        updateSaveButton(this, productId);
-        
-        if (saveToLocalStorage()) {
-          updateSavesCount();
-          
-          const savesSection = safeGetElement('saves');
-          if (savesSection && isElementInViewport(savesSection)) {
-            loadSavedProducts();
-          }
-        }
-      }
-    });
+    newBtn.addEventListener("click", (e) => handleSaveButtonClick(e, id));
   });
+  
+  // Garantir que os botões estão com o estado correto
+  updateAllSaveButtons();
 }
 
 function isElementInViewport(el) {
@@ -506,10 +588,13 @@ function loadSavedProducts() {
   noSaves.style.display = "none";
   
   loadProductsToGrid(savedProducts, savesGrid);
+  
+  // SINCRONIZAR botões após carregar
+  updateAllSaveButtons();
 }
 
 // ============================================================
-// MODAL DE PRODUTO
+// MODAL DE PRODUTO (ATUALIZADO)
 // ============================================================
 function openProductModal(product) {
   const modal = safeGetElement("productModal");
@@ -524,52 +609,11 @@ function openProductModal(product) {
   const modalSaveBtn = modal.querySelector(".modal-save-btn");
   if (modalSaveBtn) {
     modalSaveBtn.dataset.id = product.id;
-    const isSaved = savedProducts.some(p => p.id === product.id);
-    const icon = modalSaveBtn.querySelector('i');
-    
-    if (icon) {
-      icon.className = isSaved ? "fas fa-heart" : "far fa-heart";
-      if (isSaved) {
-        modalSaveBtn.classList.add("active");
-      } else {
-        modalSaveBtn.classList.remove("active");
-      }
-    }
     
     const newSaveBtn = modalSaveBtn.cloneNode(true);
     modalSaveBtn.parentNode.replaceChild(newSaveBtn, modalSaveBtn);
     
-    newSaveBtn.addEventListener("click", function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      const productId = parseInt(this.dataset.id);
-      const wasSaved = toggleSaveProduct(productId);
-      
-      if (wasSaved !== null) {
-        const icon = this.querySelector('i');
-        if (icon) {
-          if (wasSaved) {
-            icon.className = "fas fa-heart";
-            this.classList.add("active");
-          } else {
-            icon.className = "far fa-heart";
-            this.classList.remove("active");
-          }
-        }
-        
-        if (saveToLocalStorage()) {
-          updateSavesCount();
-          
-          initSaveButtons();
-          
-          const savesSection = safeGetElement('saves');
-          if (savesSection && isElementInViewport(savesSection)) {
-            loadSavedProducts();
-          }
-        }
-      }
-    });
+    newSaveBtn.addEventListener("click", (e) => handleSaveButtonClick(e, product.id));
   }
   
   modalBody.innerHTML = `
@@ -595,6 +639,9 @@ function openProductModal(product) {
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappText)}`, '_blank');
     });
   }
+  
+  // SINCRONIZAR botão do modal
+  updateAllSaveButtons();
   
   modal.classList.add("open");
   document.body.style.overflow = 'hidden';
@@ -982,11 +1029,14 @@ document.addEventListener("DOMContentLoaded", function() {
     loadStoreProducts();
     initProductModal();
     initFAQModal();
-    initContactForm(); // ← FORMSPREE FUNCIONAL
+    initContactForm();
     initUIInteractions();
     initThemeToggle();
     updateSavesCount();
     initSaveButtons();
+    
+    // Inicializar sincronização dos botões
+    updateAllSaveButtons();
     
     const savesSection = safeGetElement('saves');
     if (savesSection) {
@@ -1027,4 +1077,4 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
-console.log("✅ Script VRTIGO com Formspree funcional!");
+console.log("✅ Script VRTIGO com sincronização de corações e remoção instantânea resolvida!");

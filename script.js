@@ -1,5 +1,5 @@
 // ============================================================
-// VRTIGO - SCRIPT COMPLETO COM SISTEMA "VER MAIS" - CORRIGIDO
+// VRTIGO - SCRIPT COMPLETO COM FORMSPREE FUNCIONAL
 // ============================================================
 
 // ============================================================
@@ -8,17 +8,18 @@
 const WHATSAPP_NUMBER = "918897319841";
 let viewMoreButton = null;
 let showingAllProducts = false;
+let resizeTimeout = null;
 
 // Função para gerar placeholders coloridos por categoria
 function getPlaceholderImage(productName, category) {
   const colorMap = {
-    'basica': '333333',      // Preto
-    'logo': '6A0DAD',        // Roxo
-    'minimal': 'FFFFFF',     // Branco  
-    'colorida': '2196F3',    // Azul
-    'urbana': '9E9E9E',      // Cinza
-    'militar': '4CAF50',     // Verde
-    'exclusiva': 'FF9800'    // Laranja
+    'basica': '333333',
+    'logo': '6A0DAD',
+    'minimal': 'FFFFFF',
+    'colorida': '2196F3',
+    'urbana': '9E9E9E',
+    'militar': '4CAF50',
+    'exclusiva': 'FF9800'
   };
   
   const color = colorMap[category] || '673AB7';
@@ -29,7 +30,7 @@ function getPlaceholderImage(productName, category) {
 }
 
 // ============================================================
-// DADOS DOS PRODUTOS (10 PRODUTOS COM PLACEHOLDERS)
+// DADOS DOS PRODUTOS
 // ============================================================
 const produtosVRTIGO = [
   {
@@ -134,21 +135,106 @@ const produtosVRTIGO = [
   }
 ];
 
-let savedProducts = (() => {
+// ============================================================
+// UTILITÁRIOS
+// ============================================================
+function safeParseLocalStorage(key, defaultValue = []) {
   try {
-    return JSON.parse(localStorage.getItem("vrtigoSaves")) || [];
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
   } catch (e) {
-    console.error("Erro ao carregar dados do localStorage:", e);
-    return [];
+    console.error(`Erro ao parsear localStorage item "${key}":`, e);
+    return defaultValue;
   }
-})();
+}
+
+function safeGetElement(id) {
+  const element = document.getElementById(id);
+  if (!element) {
+    console.warn(`⚠️ Elemento #${id} não encontrado no DOM`);
+  }
+  return element;
+}
+
+function debounce(func, wait) {
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(resizeTimeout);
+      func(...args);
+    };
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(later, wait);
+  };
+}
 
 // ============================================================
-// SISTEMA "VER MAIS" RESPONSIVO
+// SISTEMA DE FAVORITOS (SAVES)
+// ============================================================
+let savedProducts = safeParseLocalStorage("vrtigoSaves", []);
+
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));
+    console.log(`💾 Favoritos salvos: ${savedProducts.length} itens`);
+    return true;
+  } catch (error) {
+    console.error("Erro ao salvar no localStorage:", error);
+    return false;
+  }
+}
+
+function toggleSaveProduct(productId) {
+  const productIndex = savedProducts.findIndex(p => p.id === productId);
+  
+  if (productIndex !== -1) {
+    savedProducts.splice(productIndex, 1);
+    console.log(`❌ Produto ${productId} removido dos favoritos`);
+    return false;
+  } else {
+    const product = produtosVRTIGO.find(p => p.id === productId);
+    if (product) {
+      savedProducts.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        desc: product.desc,
+        img: product.img,
+        placeholder: product.placeholder,
+        category: product.category
+      });
+      console.log(`✅ Produto ${productId} adicionado aos favoritos`);
+      return true;
+    }
+  }
+  return null;
+}
+
+function updateSaveButton(button, productId) {
+  const isSaved = savedProducts.some(p => p.id === productId);
+  const icon = button.querySelector("i");
+  
+  if (icon) {
+    if (isSaved) {
+      icon.className = "fas fa-heart";
+      button.classList.add("active");
+    } else {
+      icon.className = "far fa-heart";
+      button.classList.remove("active");
+    }
+  }
+}
+
+function updateSavesCount() {
+  const savesCount = document.querySelector('.saves-count');
+  if (savesCount) {
+    savesCount.textContent = `${savedProducts.length} ${savedProducts.length === 1 ? 'item' : 'itens'}`;
+  }
+}
+
+// ============================================================
+// SISTEMA "VER MAIS"
 // ============================================================
 function getInitialProductCount() {
-  // Mobile: 6 produtos (2 colunas × 3 linhas)
-  // Desktop: 8 produtos (4 colunas × 2 linhas)
   return window.innerWidth >= 1024 ? 8 : 6;
 }
 
@@ -180,7 +266,7 @@ function updateViewMoreButton() {
   const count = getRemainingProductsCount();
   const countSpan = viewMoreButton.querySelector('.count');
   
-  if (count > 0) {
+  if (count > 0 && !showingAllProducts) {
     countSpan.textContent = `+${count}`;
     viewMoreButton.style.display = 'flex';
   } else {
@@ -190,19 +276,20 @@ function updateViewMoreButton() {
 
 function handleViewMoreClick() {
   showingAllProducts = true;
-  loadStoreProducts(); // Recarrega com todos os produtos
-  viewMoreButton.style.display = 'none';
+  loadStoreProducts();
+  if (viewMoreButton) {
+    viewMoreButton.style.display = 'none';
+  }
 }
 
 // ============================================================
-// GERADOR DE CARDS DE PRODUTO (ATUALIZADO COM FALLBACK)
+// GERADOR DE CARDS DE PRODUTO
 // ============================================================
 function generateProductCard(product) {
   const isSaved = savedProducts.some(p => p.id === product.id);
-  const heartClass = isSaved ? "fa-solid" : "fa-regular";
+  const heartClass = isSaved ? "fas" : "far";
   const btnClass = isSaved ? "active" : "";
   
-  // Usar placeholder se a imagem real não carregar
   const imgSrc = product.img;
   const placeholderSrc = product.placeholder || getPlaceholderImage(product.name, product.category);
   
@@ -236,37 +323,44 @@ function generateProductCard(product) {
 function loadProductsToGrid(productsArray, gridElement) {
   if (!gridElement) return;
   
-  // Determinar quantos produtos mostrar
   let productsToShow;
   if (showingAllProducts || gridElement.id === 'saves-grid') {
-    productsToShow = productsArray; // Mostrar todos
+    productsToShow = productsArray;
   } else {
     const initialCount = getInitialProductCount();
     productsToShow = productsArray.slice(0, initialCount);
   }
   
-  gridElement.innerHTML = productsToShow.map(generateProductCard).join('');
+  const fragment = document.createDocumentFragment();
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = productsToShow.map(generateProductCard).join('');
   
-  // Re-inicializar eventos
+  while (tempDiv.firstChild) {
+    fragment.appendChild(tempDiv.firstChild);
+  }
+  
+  gridElement.innerHTML = '';
+  gridElement.appendChild(fragment);
+  
   initSaveButtons(gridElement);
   initBuyButtons(gridElement);
 }
 
 // ============================================================
-// CARREGAR PRODUTOS NA LOJA (ATUALIZADO)
+// CARREGAR PRODUTOS NA LOJA
 // ============================================================
 function loadStoreProducts() {
   const productsGrid = document.querySelector('.products-grid');
-  if (!productsGrid) return;
+  if (!productsGrid) {
+    console.warn('⚠️ Grid de produtos não encontrada');
+    return;
+  }
   
-  // Carregar produtos (com limite se não estiver mostrando todos)
   loadProductsToGrid(produtosVRTIGO, productsGrid);
   
-  // Adicionar ou atualizar botão "Ver mais"
   if (!showingAllProducts && getRemainingProductsCount() > 0) {
     const viewMoreBtn = createViewMoreButton();
     
-    // Verificar se o botão já está no DOM
     if (!productsGrid.nextElementSibling?.classList?.contains('view-more-btn')) {
       productsGrid.parentNode.insertBefore(viewMoreBtn, productsGrid.nextSibling);
     }
@@ -278,7 +372,7 @@ function loadStoreProducts() {
 }
 
 // ============================================================
-// SISTEMA DE NAVEGAÇÃO VERTICAL
+// SISTEMA DE NAVEGAÇÃO
 // ============================================================
 function initNavigation() {
   const navLinks = document.querySelectorAll('.nav-item, .bottom-nav a');
@@ -287,29 +381,36 @@ function initNavigation() {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const targetId = link.getAttribute('href');
-      scrollToSection(targetId);
+      if (targetId && targetId.startsWith('#')) {
+        scrollToSection(targetId);
+      }
     });
   });
 
   window.addEventListener('scroll', updateActiveNav);
-  document.addEventListener('keydown', handleKeyboardNavigation);
   
-  // Recalcular "Ver mais" quando redimensionar janela
-  window.addEventListener('resize', () => {
+  const debouncedResize = debounce(() => {
     if (!showingAllProducts) {
       loadStoreProducts();
     }
-  });
+  }, 250);
+  
+  window.addEventListener('resize', debouncedResize);
 }
 
 function scrollToSection(sectionId) {
   const section = document.querySelector(sectionId);
   if (section) {
     const offsetTop = section.offsetTop - 80;
-    window.scrollTo({
-      top: offsetTop,
-      behavior: 'smooth'
-    });
+    
+    if ('scrollBehavior' in document.documentElement.style) {
+      window.scrollTo({
+        top: offsetTop,
+        behavior: 'smooth'
+      });
+    } else {
+      window.scrollTo(0, offsetTop);
+    }
   }
 }
 
@@ -337,21 +438,8 @@ function updateActiveNav() {
   });
 }
 
-function handleKeyboardNavigation(e) {
-  switch(e.key) {
-    case 'Home':
-      e.preventDefault();
-      scrollToSection('#loja');
-      break;
-    case 'End':
-      e.preventDefault();
-      scrollToSection('#contato');
-      break;
-  }
-}
-
 // ============================================================
-// SISTEMA DE SAVE (PRODUTOS FAVORITOS) - CORRIGIDO
+// SISTEMA DE SAVE (PRODUTOS FAVORITOS)
 // ============================================================
 function initSaveButtons(scope = document) {
   const buttons = scope.querySelectorAll(".save-btn");
@@ -360,88 +448,51 @@ function initSaveButtons(scope = document) {
     const id = parseInt(btn.dataset.id);
     if (isNaN(id)) return;
     
-    const icon = btn.querySelector("i");
-    if (!icon) return;
+    updateSaveButton(btn, id);
     
-    // Verificar estado atual
-    const isCurrentlySaved = savedProducts.some(p => p.id === id);
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
     
-    // Atualizar visual inicialmente
-    if (isCurrentlySaved) {
-      icon.classList.remove("fa-regular");
-      icon.classList.add("fa-solid");
-      btn.classList.add("active");
-    } else {
-      icon.classList.remove("fa-solid");
-      icon.classList.add("fa-regular");
-      btn.classList.remove("active");
-    }
-    
-    // Adicionar evento de clique
-    btn.addEventListener("click", function(e) {
+    newBtn.addEventListener("click", function(e) {
       e.preventDefault();
       e.stopPropagation();
       
-      const product = produtosVRTIGO.find(p => p.id === id);
-      if (!product) return;
+      const productId = parseInt(this.dataset.id);
+      const wasSaved = toggleSaveProduct(productId);
       
-      const index = savedProducts.findIndex(p => p.id === id);
-      const isSaved = index !== -1;
-      
-      if (isSaved) {
-        // Remover dos favoritos
-        savedProducts.splice(index, 1);
-        icon.classList.remove("fa-solid");
-        icon.classList.add("fa-regular");
-        btn.classList.remove("active");
-        console.log(`❌ Produto ${id} removido dos favoritos`);
-      } else {
-        // Adicionar aos favoritos
-        savedProducts.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          desc: product.desc,
-          img: product.img,
-          placeholder: product.placeholder,
-          category: product.category
-        });
-        icon.classList.remove("fa-regular");
-        icon.classList.add("fa-solid");
-        btn.classList.add("active");
-        console.log(`✅ Produto ${id} adicionado aos favoritos`);
-      }
-      
-      // Salvar no localStorage
-      try {
-        localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));
-        console.log(`💾 Favoritos salvos: ${savedProducts.length} itens`);
-        updateSavesCount();
+      if (wasSaved !== null) {
+        updateSaveButton(this, productId);
         
-        // Se estiver na seção SAVES, recarregar
-        if (document.getElementById('saves')?.checkVisibility?.()) {
-          loadSavedProducts();
+        if (saveToLocalStorage()) {
+          updateSavesCount();
+          
+          const savesSection = safeGetElement('saves');
+          if (savesSection && isElementInViewport(savesSection)) {
+            loadSavedProducts();
+          }
         }
-      } catch (error) {
-        console.error("Erro ao salvar no localStorage:", error);
       }
     });
   });
 }
 
-function updateSavesCount() {
-  const savesCount = document.querySelector('.saves-count');
-  if (savesCount) {
-    savesCount.textContent = `${savedProducts.length} ${savedProducts.length === 1 ? 'item' : 'itens'}`;
-  }
+function isElementInViewport(el) {
+  if (!el) return false;
+  const rect = el.getBoundingClientRect();
+  return (
+    rect.top >= 0 &&
+    rect.left >= 0 &&
+    rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+  );
 }
 
 // ============================================================
 // SEÇÃO SAVES - CARREGAR PRODUTOS SALVOS
 // ============================================================
 function loadSavedProducts() {
-  const savesGrid = document.getElementById("saves-grid");
-  const noSaves = document.getElementById("no-saves");
+  const savesGrid = safeGetElement("saves-grid");
+  const noSaves = safeGetElement("no-saves");
 
   if (!savesGrid || !noSaves) return;
 
@@ -458,125 +509,117 @@ function loadSavedProducts() {
 }
 
 // ============================================================
-// MODAL DE PRODUTO (COM BOTÃO SAVE FUNCIONAL)
+// MODAL DE PRODUTO
 // ============================================================
 function openProductModal(product) {
-  const modal = document.getElementById("productModal");
+  const modal = safeGetElement("productModal");
+  if (!modal) {
+    console.error('❌ Modal não encontrado');
+    return;
+  }
+  
   const modalBody = modal.querySelector(".modal-body");
+  if (!modalBody) return;
 
-  // Verificar estado atual
-  const isSaved = savedProducts.some(p => p.id === product.id);
-  const heartClass = isSaved ? "fa-solid" : "fa-regular";
-  const btnClass = isSaved ? "active" : "";
-
-  modalBody.innerHTML = `
-    <div class="modal-content">
-      <div class="modal-product-image">
-        <img src="${product.img}" 
-             alt="${product.name}" 
-             onerror="this.onerror=null; this.src='${product.placeholder}'">
-      </div>
-
-      <div class="modal-info">
-        <h2>${product.name}</h2>
-        <p class="modal-desc">${product.desc}</p>
-
-        <div class="modal-price-row">
-          <span class="modal-price">R$ ${product.price}</span>
-
-          <button class="modal-save-btn ${btnClass}" 
-                  data-id="${product.id}" 
-                  type="button">
-            <i class="${heartClass} fa-heart"></i>
-          </button>
-        </div>
-
-        <button class="modal-buy-btn" type="button">Comprar</button>
-      </div>
-    </div>
-  `;
-
-  modal.classList.add("open");
-
-  // Adicionar evento ao botão de save DO MODAL
-  const modalSaveBtn = modal.querySelector('.modal-save-btn');
+  const modalSaveBtn = modal.querySelector(".modal-save-btn");
   if (modalSaveBtn) {
-    modalSaveBtn.addEventListener('click', function(e) {
+    modalSaveBtn.dataset.id = product.id;
+    const isSaved = savedProducts.some(p => p.id === product.id);
+    const icon = modalSaveBtn.querySelector('i');
+    
+    if (icon) {
+      icon.className = isSaved ? "fas fa-heart" : "far fa-heart";
+      if (isSaved) {
+        modalSaveBtn.classList.add("active");
+      } else {
+        modalSaveBtn.classList.remove("active");
+      }
+    }
+    
+    const newSaveBtn = modalSaveBtn.cloneNode(true);
+    modalSaveBtn.parentNode.replaceChild(newSaveBtn, modalSaveBtn);
+    
+    newSaveBtn.addEventListener("click", function(e) {
       e.preventDefault();
       e.stopPropagation();
       
       const productId = parseInt(this.dataset.id);
-      const product = produtosVRTIGO.find(p => p.id === productId);
+      const wasSaved = toggleSaveProduct(productId);
       
-      if (!product) return;
-      
-      const index = savedProducts.findIndex(p => p.id === productId);
-      const isCurrentlySaved = index !== -1;
-      const icon = this.querySelector('i');
-      
-      if (isCurrentlySaved) {
-        // Remover dos favoritos
-        savedProducts.splice(index, 1);
-        icon.classList.remove("fa-solid");
-        icon.classList.add("fa-regular");
-        this.classList.remove("active");
-        console.log(`❌ Produto ${productId} removido dos favoritos (modal)`);
-      } else {
-        // Adicionar aos favoritos
-        savedProducts.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          desc: product.desc,
-          img: product.img,
-          placeholder: product.placeholder,
-          category: product.category
-        });
-        icon.classList.remove("fa-regular");
-        icon.classList.add("fa-solid");
-        this.classList.add("active");
-        console.log(`✅ Produto ${productId} adicionado aos favoritos (modal)`);
-      }
-      
-      // Salvar no localStorage
-      try {
-        localStorage.setItem("vrtigoSaves", JSON.stringify(savedProducts));
-        console.log(`💾 Favoritos salvos: ${savedProducts.length} itens`);
-        updateSavesCount();
-        
-        // Atualizar botões de save em todos os lugares
-        initSaveButtons();
-        
-        // Se estiver na seção SAVES, recarregar
-        if (document.getElementById('saves')?.checkVisibility?.()) {
-          loadSavedProducts();
+      if (wasSaved !== null) {
+        const icon = this.querySelector('i');
+        if (icon) {
+          if (wasSaved) {
+            icon.className = "fas fa-heart";
+            this.classList.add("active");
+          } else {
+            icon.className = "far fa-heart";
+            this.classList.remove("active");
+          }
         }
-      } catch (error) {
-        console.error("Erro ao salvar no localStorage:", error);
+        
+        if (saveToLocalStorage()) {
+          updateSavesCount();
+          
+          initSaveButtons();
+          
+          const savesSection = safeGetElement('saves');
+          if (savesSection && isElementInViewport(savesSection)) {
+            loadSavedProducts();
+          }
+        }
       }
     });
   }
-
-  // Adicionar evento ao botão "Comprar" do modal
-  const modalBuyBtn = modal.querySelector('.modal-buy-btn');
+  
+  modalBody.innerHTML = `
+    <div class="modal-product-image">
+      <img src="${product.img}" 
+           alt="${product.name}" 
+           onerror="this.onerror=null; this.src='${product.placeholder}'">
+    </div>
+    <div class="modal-info">
+      <h2>${product.name}</h2>
+      <p class="modal-desc">${product.desc}</p>
+      <div class="modal-price-row">
+        <span class="modal-price">R$ ${product.price}</span>
+      </div>
+      <button class="modal-buy-btn" type="button">Comprar</button>
+    </div>
+  `;
+  
+  const modalBuyBtn = modalBody.querySelector('.modal-buy-btn');
   if (modalBuyBtn) {
     modalBuyBtn.addEventListener('click', function() {
       const whatsappText = `Olá! Gostaria de comprar: ${product.name} (R$ ${product.price})`;
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(whatsappText)}`, '_blank');
     });
   }
+  
+  modal.classList.add("open");
+  document.body.style.overflow = 'hidden';
 }
 
 function initProductModal() {
-  const modal = document.getElementById("productModal");
-  const closeBtn = document.getElementById("modalClose");
+  const modal = safeGetElement("productModal");
+  if (!modal) {
+    console.warn('⚠️ Modal de produto não encontrado');
+    return;
+  }
+  
+  const closeBtn = modal.querySelector(".modal-close");
+  if (!closeBtn) {
+    console.warn('⚠️ Botão de fechar modal não encontrado');
+    return;
+  }
 
-  if (!modal || !closeBtn) return;
-
-  // Adicione este evento para abrir modal ao clicar em produtos
   document.addEventListener("click", function(e) {
     const productCard = e.target.closest(".product-card");
     if (productCard) {
+      if (e.target.closest('.save-btn') || e.target.closest('.buy-btn')) {
+        return;
+      }
+      
       const productId = parseInt(productCard.dataset.id);
       const product = produtosVRTIGO.find(p => p.id === productId);
       
@@ -587,14 +630,22 @@ function initProductModal() {
     }
   });
 
-  // Fechar modal
   closeBtn.addEventListener("click", () => {
     modal.classList.remove("open");
+    document.body.style.overflow = 'auto';
   });
 
   modal.addEventListener("click", (e) => {
     if (e.target === modal) {
       modal.classList.remove("open");
+      document.body.style.overflow = 'auto';
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("open")) {
+      modal.classList.remove("open");
+      document.body.style.overflow = 'auto';
     }
   });
 }
@@ -606,7 +657,10 @@ function initBuyButtons(scope = document) {
   const buyButtons = scope.querySelectorAll(".buy-btn");
   
   buyButtons.forEach(btn => {
-    btn.addEventListener("click", function(e) {
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    
+    newBtn.addEventListener("click", function(e) {
       e.preventDefault();
       e.stopPropagation();
       
@@ -628,12 +682,16 @@ function initBuyButtons(scope = document) {
 // MODAL FAQ
 // ============================================================
 function initFAQModal() {
-  const faqModal = document.getElementById("faqModal");
-  const contactModal = document.getElementById("contactModal");
+  const faqModal = safeGetElement("faqModal");
+  const contactModal = safeGetElement("contactModal");
+  
+  if (!faqModal) {
+    console.warn('⚠️ Modal FAQ não encontrado');
+    return;
+  }
+
   const faqButtons = document.querySelectorAll(".faq-btn");
-
-  if (!faqModal) return;
-
+  
   faqButtons.forEach(btn => {
     btn.addEventListener("click", () => {
       faqModal.classList.add("open");
@@ -641,7 +699,6 @@ function initFAQModal() {
     });
   });
 
-  // Fechar FAQ modal
   const closeFAQModal = () => {
     faqModal.classList.remove("open");
     document.body.style.overflow = 'auto';
@@ -659,91 +716,187 @@ function initFAQModal() {
     }
   });
 
-  // Contact modal
   if (contactModal) {
+    const closeContactModal = () => {
+      contactModal.classList.remove("open");
+      document.body.style.overflow = 'auto';
+    };
+    
     contactModal.addEventListener("click", (e) => {
       if (e.target === contactModal || e.target.classList.contains('modal-close') || e.target.classList.contains('close-modal-btn')) {
-        contactModal.classList.remove("open");
-        document.body.style.overflow = 'auto';
+        closeContactModal();
+      }
+    });
+    
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && contactModal.classList.contains("open")) {
+        closeContactModal();
       }
     });
   }
 }
 
 // ============================================================
-// FORMULÁRIO DE CONTATO
+// FORMULÁRIO DE CONTATO - FORMSPREE SEM ABRIR NOVA ABA
 // ============================================================
 function initContactForm() {
   const form = document.getElementById("contactForm");
-  const contactModal = document.getElementById("contactModal");
+  const contactModal = safeGetElement("contactModal");
   
-  if (!form) return;
+  if (!form) {
+    console.warn('⚠️ Formulário de contato não encontrado');
+    return;
+  }
 
+  // 1. REMOVER atributos que causam redirecionamento
+  form.removeAttribute('action');
+  form.removeAttribute('method');
+  form.removeAttribute('target');
+  
   form.addEventListener("submit", async function(e) {
-    e.preventDefault();
+    e.preventDefault(); // AGORA USA preventDefault para BLOQUEAR redirecionamento
     e.stopPropagation();
     
     const submitBtn = form.querySelector('.submit-btn');
-    const originalText = submitBtn.textContent;
+    if (!submitBtn) return;
     
+    // Feedback visual
+    const originalText = submitBtn.textContent;
     submitBtn.textContent = 'Enviando...';
     submitBtn.disabled = true;
     
-    const formData = new FormData(form);
-    
     try {
+      // Coletar dados do formulário
+      const formData = new FormData(form);
+      
+      // Debug: ver dados enviados
+      console.log('📤 Enviando para Formspree...');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+      }
+      
+      // 2. Enviar via AJAX/Fetch (NÃO redireciona a página)
       const response = await fetch('https://formspree.io/f/xovkranj', {
         method: 'POST',
         body: formData,
-        headers: { 'Accept': 'application/json' }
+        headers: {
+          'Accept': 'application/json'
+        }
       });
       
+      console.log('📬 Resposta do Formspree:', response.status);
+      
       if (response.ok) {
+        // SUCESSO - mostrar modal LOCAL (sem abrir nova aba)
+        console.log('✅ Email enviado via Formspree com sucesso!');
+        
         // Mostrar modal de confirmação
         if (contactModal) {
           contactModal.classList.add("open");
           document.body.style.overflow = 'hidden';
         }
+        
+        // Limpar formulário
         form.reset();
+        
+        // Feedback visual adicional
+        showFormMessage('✅ Mensagem enviada com sucesso!', 'success');
+        
       } else {
+        // ERRO - mostrar mensagem de erro LOCAL
+        const errorText = await response.text();
+        console.error('❌ Erro do Formspree:', errorText);
         showFormMessage('❌ Erro ao enviar. Tente novamente.', 'error');
       }
       
     } catch (error) {
-      console.error('Erro de rede:', error);
+      // ERRO DE REDE
+      console.error('❌ Erro de rede:', error);
       showFormMessage('❌ Erro de conexão. Verifique sua internet.', 'error');
+      
     } finally {
+      // Restaurar botão
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
     }
+  });
+  
+  // 3. Adicionar validação básica para melhor UX
+  const inputs = form.querySelectorAll('input[required], textarea[required]');
+  inputs.forEach(input => {
+    input.addEventListener('invalid', function(e) {
+      e.preventDefault();
+      this.style.borderColor = 'var(--accent)';
+      showFormMessage('❌ Por favor, preencha todos os campos obrigatórios.', 'error');
+    });
     
-    return false;
+    input.addEventListener('input', function() {
+      if (this.value.trim()) {
+        this.style.borderColor = '';
+      }
+    });
   });
 }
 
+// Função auxiliar para mostrar mensagens
 function showFormMessage(message, type) {
-  const oldMessage = document.querySelector('.form-message');
-  if (oldMessage) oldMessage.remove();
+  // Remover mensagens anteriores
+  const oldMessages = document.querySelectorAll('.form-message');
+  oldMessages.forEach(msg => msg.remove());
   
+  // Criar nova mensagem
   const messageDiv = document.createElement('div');
   messageDiv.className = `form-message ${type}`;
   messageDiv.textContent = message;
+  messageDiv.style.cssText = `
+    animation: fadeIn 0.3s ease;
+    margin: 1rem 0;
+    padding: 12px 16px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.9rem;
+    ${type === 'success' ? 
+      'color: #00eaff; background-color: rgba(0, 234, 255, 0.1); border: 1px solid rgba(0, 234, 255, 0.3);' : 
+      'color: #ff5050; background-color: rgba(255, 80, 80, 0.1); border: 1px solid rgba(255, 80, 80, 0.3);'}
+  `;
   
   const form = document.getElementById("contactForm");
   if (form) {
+    // Inserir mensagem antes do botão de submit
     const submitBtn = form.querySelector('.submit-btn');
-    submitBtn.parentNode.insertBefore(messageDiv, submitBtn.nextSibling);
-    
-    setTimeout(() => {
-      if (messageDiv.parentNode) {
-        messageDiv.style.opacity = '0';
-        messageDiv.style.transition = 'opacity 0.3s ease';
-        setTimeout(() => {
-          if (messageDiv.parentNode) messageDiv.remove();
-        }, 300);
-      }
-    }, 5000);
+    if (submitBtn && submitBtn.parentNode) {
+      submitBtn.parentNode.insertBefore(messageDiv, submitBtn);
+      
+      // Auto-remover após 5 segundos
+      setTimeout(() => {
+        if (messageDiv.parentNode) {
+          messageDiv.style.opacity = '0';
+          messageDiv.style.transition = 'opacity 0.3s ease';
+          setTimeout(() => {
+            if (messageDiv.parentNode) messageDiv.remove();
+          }, 300);
+        }
+      }, 5000);
+    }
   }
+}
+
+// Adicionar estilos CSS para as mensagens (se não existirem)
+if (!document.querySelector('#form-message-styles')) {
+  const style = document.createElement('style');
+  style.id = 'form-message-styles';
+  style.textContent = `
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .form-message {
+      animation: fadeIn 0.3s ease !important;
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 // ============================================================
@@ -761,7 +914,6 @@ function initUIInteractions() {
     });
   });
 
-  // Botão "Explorar Loja" na seção de favoritos vazios
   const exploreBtn = document.querySelector('#no-saves .cta-btn.primary');
   if (exploreBtn) {
     exploreBtn.addEventListener('click', () => {
@@ -774,68 +926,47 @@ function initUIInteractions() {
 // LIGHT/DARK THEME TOGGLE
 // ============================================================
 function initThemeToggle() {
-  console.log('🔄 Inicializando tema...');
-  
   const themeToggleBtn = document.querySelector('.theme-toggle-btn');
   if (!themeToggleBtn) {
-    console.error('❌ Botão de tema não encontrado!');
+    console.warn('⚠️ Botão de tema não encontrado');
     return;
   }
   
   const themeIcon = themeToggleBtn.querySelector('i');
   if (!themeIcon) {
-    console.error('❌ Ícone do tema não encontrado!');
+    console.warn('⚠️ Ícone do tema não encontrado');
     return;
   }
   
-  console.log('✅ Elementos do tema encontrados');
-  
-  // Verificar tema salvo ou preferência do sistema
   const savedTheme = localStorage.getItem('vrtigoTheme');
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   
-  console.log(`🌗 Tema salvo: "${savedTheme}", Sistema prefere escuro: ${systemPrefersDark}`);
-  
-  // Definir tema inicial
   if (savedTheme === 'light' || (!savedTheme && !systemPrefersDark)) {
-    console.log('🌞 Aplicando tema claro inicial');
     document.documentElement.setAttribute('data-theme', 'light');
     themeIcon.classList.remove('fa-moon');
     themeIcon.classList.add('fa-sun');
-  } else {
-    console.log('🌙 Mantendo tema escuro');
   }
   
-  // Alternar tema
   themeToggleBtn.addEventListener('click', () => {
-    console.log('🎯 Botão de tema clicado!');
-    
     const currentTheme = document.documentElement.getAttribute('data-theme');
     
     if (currentTheme === 'light') {
-      // Mudar para dark
       document.documentElement.removeAttribute('data-theme');
       themeIcon.classList.remove('fa-sun');
       themeIcon.classList.add('fa-moon');
       localStorage.setItem('vrtigoTheme', 'dark');
-      console.log('🌙 Mudado para tema escuro');
     } else {
-      // Mudar para light
       document.documentElement.setAttribute('data-theme', 'light');
       themeIcon.classList.remove('fa-moon');
       themeIcon.classList.add('fa-sun');
       localStorage.setItem('vrtigoTheme', 'light');
-      console.log('🌞 Mudado para tema claro');
     }
     
-    // Animação do ícone
     themeIcon.style.transform = 'scale(1.2)';
     setTimeout(() => {
       themeIcon.style.transform = 'scale(1)';
     }, 200);
   });
-  
-  console.log('✅ Tema inicializado com sucesso!');
 }
 
 // ============================================================
@@ -846,66 +977,54 @@ document.addEventListener("DOMContentLoaded", function() {
   console.log(`📊 Total de produtos: ${produtosVRTIGO.length}`);
   console.log(`💾 Produtos salvos: ${savedProducts.length}`);
   
-  // Inicializar tudo (na ordem correta)
-  initNavigation();
-  loadStoreProducts();
-  initProductModal();
-  initFAQModal();
-  initContactForm();
-  initUIInteractions();
-  initThemeToggle();
-  updateSavesCount();
-  
-  // Observer para seção SAVES
-  const savesSection = document.getElementById('saves');
-  if (savesSection) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          loadSavedProducts();
-        }
-      });
-    }, { threshold: 0.1 });
+  try {
+    initNavigation();
+    loadStoreProducts();
+    initProductModal();
+    initFAQModal();
+    initContactForm(); // ← FORMSPREE FUNCIONAL
+    initUIInteractions();
+    initThemeToggle();
+    updateSavesCount();
+    initSaveButtons();
     
-    observer.observe(savesSection);
+    const savesSection = safeGetElement('saves');
+    if (savesSection) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            loadSavedProducts();
+          }
+        });
+      }, { threshold: 0.1 });
+      
+      observer.observe(savesSection);
+    }
+    
+    console.log("✅ Sistema VRTIGO inicializado com sucesso!");
+    
+  } catch (error) {
+    console.error("❌ Erro durante inicialização:", error);
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'system-error';
+    errorDiv.innerHTML = `
+      <p>Ocorreu um erro ao carregar a loja. Por favor, recarregue a página.</p>
+      <button onclick="location.reload()">Recarregar</button>
+    `;
+    errorDiv.style.cssText = `
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      z-index: 9999;
+      text-align: center;
+    `;
+    document.body.appendChild(errorDiv);
   }
-  
-  // Debug: verificar todos os produtos
-  console.log(`✅ ${produtosVRTIGO.length} produtos configurados`);
-  console.log(`📱 Mostrando inicialmente: ${getInitialProductCount()} produtos`);
 });
 
-// ============================================================
-// CSS IMPORTANTE PARA ADICIONAR AO SEU ARQUIVO CSS
-// ============================================================
-/*
-.save-btn.active,
-.modal-save-btn.active {
-  color: #ff0000 !important;
-}
-
-.save-btn.active i,
-.modal-save-btn.active i {
-  color: #ff0000 !important;
-}
-
-.save-btn,
-.modal-save-btn {
-  transition: all 0.3s ease;
-}
-
-.save-btn:hover,
-.modal-save-btn:hover {
-  transform: scale(1.1);
-}
-
-.modal {
-  display: none;
-}
-
-.modal.open {
-  display: flex;
-}
-*/
-
-console.log("✅ Script VRTIGO com sistema de favoritos corrigido e funcional!");
+console.log("✅ Script VRTIGO com Formspree funcional!");
